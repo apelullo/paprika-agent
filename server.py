@@ -12,6 +12,7 @@ mcp = FastMCP("Paprika")
 PAPRIKA_API = "https://www.paprikaapp.com/api/v2"
 
 _recipe_cache: dict[str, dict] = {}  # uid → full recipe data
+_name_index: dict[str, str] = {}  # lowercase name → uid
 
 
 async def get_token() -> str:
@@ -68,6 +69,7 @@ async def _populate_cache() -> None:
     for recipe in recipes:
         if recipe is not None:
             _recipe_cache[recipe["uid"]] = recipe
+            _name_index[recipe["name"].lower()] = recipe["uid"]
 
 
 @mcp.tool()
@@ -75,6 +77,14 @@ async def list_recipes() -> list[str]:
     """Return a list of all recipe titles from Paprika."""
     await _populate_cache()
     return [r["name"] for r in _recipe_cache.values()]
+
+
+@mcp.tool()
+async def get_recipe(name: str) -> dict | None:
+    """Return full details for a recipe by exact name, or None if not found."""
+    await _populate_cache()
+    uid = _name_index.get(name.lower())
+    return _recipe_cache[uid] if uid else None
 
 
 if __name__ == "__main__":
