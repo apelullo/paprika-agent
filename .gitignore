@@ -11,3 +11,9 @@ wheels/
 
 # Secrets
 .env
+
+# Claude Code
+.claude/
+
+# Unused scaffold
+main.py
