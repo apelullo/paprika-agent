@@ -11,6 +11,8 @@ mcp = FastMCP("Paprika")
 
 PAPRIKA_API = "https://www.paprikaapp.com/api/v2"
 
+_recipe_cache: dict[str, dict] = {}  # uid → full recipe data
+
 
 async def get_token() -> str:
     email = os.getenv("PAPRIKA_EMAIL")
@@ -42,11 +44,15 @@ async def fetch_recipe(
         return response.json()["result"]
 
 
-@mcp.tool()
-async def list_recipes() -> list[str]:
-    """Return a list of all recipe titles from Paprika."""
+async def _populate_cache() -> None:
+    """Fetch all recipes from Paprika and store in module-level cache.
+    No-op if cache is already warm."""
+    if _recipe_cache:
+        return
+
     token = await get_token()
     semaphore = asyncio.Semaphore(5)
+
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(
             f"{PAPRIKA_API}/sync/recipes/",
@@ -59,8 +65,16 @@ async def list_recipes() -> list[str]:
             *[fetch_recipe(client, token, entry["uid"], semaphore) for entry in index]
         )
 
-        recipes = [r for r in recipes if r is not None]
-        return [recipe["name"] for recipe in recipes]
+    for recipe in recipes:
+        if recipe is not None:
+            _recipe_cache[recipe["uid"]] = recipe
+
+
+@mcp.tool()
+async def list_recipes() -> list[str]:
+    """Return a list of all recipe titles from Paprika."""
+    await _populate_cache()
+    return [r["name"] for r in _recipe_cache.values()]
 
 
 if __name__ == "__main__":
