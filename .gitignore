@@ -13,7 +13,7 @@ wheels/
 .env
 
 # Claude Code
-.claude/
+.claude/settings.local.json
 
 # Unused scaffold
 main.py
