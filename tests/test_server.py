@@ -1,9 +1,17 @@
 import asyncio
 
+import httpx
 import pytest
 
 import server
-from server import PAPRIKA_API, _normalize, _populate_cache, get_recipe, list_recipes
+from server import (
+    PAPRIKA_API,
+    _normalize,
+    _populate_cache,
+    fetch_recipe,
+    get_recipe,
+    list_recipes,
+)
 
 
 async def _noop():
@@ -65,6 +73,20 @@ def test_normalize_empty_string():
 
 def test_normalize_mixed_apostrophes():
     assert _normalize("it’s a ‘test’") == "it's a 'test'"
+
+
+@pytest.mark.anyio
+async def test_fetch_recipe_404(httpx_mock):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipe/missing-uid/",
+        status_code=404,
+    )
+    async with httpx.AsyncClient() as client:
+        result = await fetch_recipe(
+            client, "fake-token", "missing-uid", asyncio.Semaphore(1)
+        )
+    assert result is None
 
 
 @pytest.mark.anyio
