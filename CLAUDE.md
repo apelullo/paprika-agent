@@ -14,6 +14,15 @@ Dependencies are managed with `uv`. To install them:
 uv sync
 ```
 
+## Running tests
+
+```bash
+uv run pytest tests/ -v
+```
+
+Tests live in `tests/test_server.py`. Unit tests cover pure functions and
+require no credentials or network access.
+
 ## Architecture
 
 All MCP tools live in `server.py`. The server authenticates with the Paprika API using email/password credentials from `.env` (`PAPRIKA_EMAIL`, `PAPRIKA_PASSWORD`), exchanging them for a bearer token on each cold start.
