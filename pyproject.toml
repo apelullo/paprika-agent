@@ -27,4 +27,4 @@ anyio_mode = "asyncio"
 target-version = "py313"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "B", "UP", "N"]
