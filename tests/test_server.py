@@ -42,3 +42,23 @@ def test_get_recipe_not_found(monkeypatch):
     monkeypatch.setattr("server._populate_cache", _noop)
     result = asyncio.run(get_recipe("Nonexistent"))
     assert "No recipe found" in result
+
+
+def test_get_recipe_curly_apostrophe(monkeypatch):
+    # Paprika stores curly apostrophes; user types straight — both should match
+    monkeypatch.setattr(
+        "server._recipe_cache",
+        {"uid-1": {"uid": "uid-1", "name": "Mom’s Soup"}},
+    )
+    monkeypatch.setattr("server._name_index", {"mom's soup": "uid-1"})
+    monkeypatch.setattr("server._populate_cache", _noop)
+    result = asyncio.run(get_recipe("Mom's Soup"))
+    assert result == {"uid": "uid-1", "name": "Mom’s Soup"}
+
+
+def test_normalize_empty_string():
+    assert _normalize("") == ""
+
+
+def test_normalize_mixed_apostrophes():
+    assert _normalize("it’s a 'test'") == "it's a 'test'"
