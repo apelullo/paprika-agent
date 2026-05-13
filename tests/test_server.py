@@ -1,6 +1,9 @@
 import asyncio
 
-from server import _normalize, get_recipe, list_recipes
+import pytest
+
+import server
+from server import PAPRIKA_API, _normalize, _populate_cache, get_recipe, list_recipes
 
 
 async def _noop():
@@ -61,4 +64,31 @@ def test_normalize_empty_string():
 
 
 def test_normalize_mixed_apostrophes():
-    assert _normalize("it’s a 'test'") == "it's a 'test'"
+    assert _normalize("it’s a ‘test’") == "it's a 'test'"
+
+
+@pytest.mark.anyio
+async def test_populate_cache(httpx_mock, monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._name_index", {})
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {"token": "fake-token"}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipes/",
+        json={"result": [{"uid": "uid-1", "name": "Mom’s Soup"}]},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipe/uid-1/",
+        json={"result": {"uid": "uid-1", "name": "Mom’s Soup"}},
+    )
+
+    await _populate_cache()
+
+    assert server._recipe_cache == {"uid-1": {"uid": "uid-1", "name": "Mom’s Soup"}}
+    assert server._name_index == {"mom's soup": "uid-1"}
