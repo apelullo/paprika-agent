@@ -45,6 +45,11 @@ async def fetch_recipe(
         return response.json()["result"]
 
 
+def _normalize(name: str) -> str:
+    """Lowercase and normalize curly apostrophes to straight for consistent matching."""
+    return name.lower().replace("’", "'").replace("‘", "'")
+
+
 async def _populate_cache() -> None:
     """Fetch all recipes from Paprika and store in module-level cache.
     No-op if cache is already warm."""
@@ -69,7 +74,7 @@ async def _populate_cache() -> None:
     for recipe in recipes:
         if recipe is not None:
             _recipe_cache[recipe["uid"]] = recipe
-            _name_index[recipe["name"].lower()] = recipe["uid"]
+            _name_index[_normalize(recipe["name"])] = recipe["uid"]
 
 
 @mcp.tool()
@@ -84,7 +89,7 @@ async def get_recipe(name: str) -> dict | str:
     """Return full details for a recipe by name (case-insensitive, exact match).
     Returns a not-found message if no recipe with that name exists."""
     await _populate_cache()
-    uid = _name_index.get(name.lower())
+    uid = _name_index.get(_normalize(name))
     if uid is None:
         return f"No recipe found with name '{name}'."
     return _recipe_cache[uid]
