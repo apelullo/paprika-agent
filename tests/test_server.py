@@ -11,6 +11,7 @@ from server import (
     fetch_recipe,
     get_recipe,
     list_recipes,
+    search_recipes,
 )
 
 
@@ -73,6 +74,54 @@ def test_normalize_empty_string():
 
 def test_normalize_mixed_apostrophes():
     assert _normalize("it’s a ‘test’") == "it's a 'test'"
+
+
+def test_search_recipes_single_token(monkeypatch):
+    monkeypatch.setattr(
+        "server._recipe_cache",
+        {"uid-1": {"name": "Chicken Soup"}, "uid-2": {"name": "Garlic Bread"}},
+    )
+    monkeypatch.setattr("server._populate_cache", _noop)
+    result = asyncio.run(search_recipes("chicken"))
+    assert result == ["Chicken Soup"]
+
+
+def test_search_recipes_token_order_independence(monkeypatch):
+    monkeypatch.setattr(
+        "server._recipe_cache",
+        {"uid-1": {"name": "Chicken Tikka Masala"}, "uid-2": {"name": "Garlic Bread"}},
+    )
+    monkeypatch.setattr("server._populate_cache", _noop)
+    result = asyncio.run(search_recipes("masala chicken"))
+    assert result == ["Chicken Tikka Masala"]
+
+
+def test_search_recipes_multiple_matches(monkeypatch):
+    monkeypatch.setattr(
+        "server._recipe_cache",
+        {
+            "uid-1": {"name": "Chicken Soup"},
+            "uid-2": {"name": "Chicken Tikka Masala"},
+            "uid-3": {"name": "Garlic Bread"},
+        },
+    )
+    monkeypatch.setattr("server._populate_cache", _noop)
+    result = asyncio.run(search_recipes("chicken"))
+    assert set(result) == {"Chicken Soup", "Chicken Tikka Masala"}
+
+
+def test_search_recipes_no_match(monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {"uid-1": {"name": "Chicken Soup"}})
+    monkeypatch.setattr("server._populate_cache", _noop)
+    result = asyncio.run(search_recipes("pasta"))
+    assert "No recipes found" in result
+
+
+def test_search_recipes_empty_query(monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._populate_cache", _noop)
+    result = asyncio.run(search_recipes(""))
+    assert "provide a search query" in result
 
 
 @pytest.mark.anyio

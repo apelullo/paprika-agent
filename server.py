@@ -95,5 +95,21 @@ async def get_recipe(name: str) -> dict | str:
     return _recipe_cache[uid]
 
 
+@mcp.tool()
+async def search_recipes(query: str) -> list[str] | str:
+    """Search recipes by keyword. Returns all recipe names where every query
+    token appears in the name (case-insensitive, order-independent)."""
+    await _populate_cache()
+    tokens = _normalize(query).split()
+    if not tokens:
+        return "Please provide a search query."
+    matches = [
+        r["name"]
+        for r in _recipe_cache.values()
+        if all(token in _normalize(r["name"]) for token in tokens)
+    ]
+    return matches if matches else f"No recipes found matching '{query}'."
+
+
 if __name__ == "__main__":
     mcp.run()
