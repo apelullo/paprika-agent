@@ -80,11 +80,14 @@ async def list_recipes() -> list[str]:
 
 
 @mcp.tool()
-async def get_recipe(name: str) -> dict | None:
-    """Return full details for a recipe by exact name, or None if not found."""
+async def get_recipe(name: str) -> dict | str:
+    """Return full details for a recipe by name (case-insensitive, exact match).
+    Returns a not-found message if no recipe with that name exists."""
     await _populate_cache()
     uid = _name_index.get(name.lower())
-    return _recipe_cache[uid] if uid else None
+    if uid is None:
+        return f"No recipe found with name '{name}'."
+    return _recipe_cache[uid]
 
 
 if __name__ == "__main__":
