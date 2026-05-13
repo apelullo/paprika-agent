@@ -31,6 +31,12 @@ New tools that read recipe data should call `await _populate_cache()` first and 
 
 Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`.
 
+## Commit workflow
+
+Before committing: show the git diff and proposed commit message for review.
+Once confirmed, run `git add`, `git commit`, and `git push` together without
+asking again.
+
 ## Environment
 
 Requires a `.env` file with:
