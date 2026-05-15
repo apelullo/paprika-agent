@@ -47,8 +47,19 @@ Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should c
 
 ## Planning
 
-`project_development_plan.md` in the repo root is the master development plan.
-Update it when milestones are hit or plans change.
+`project_development_plan.md` in the repo root is Claude Code's operational
+memory. Update it when:
+- A milestone is completed
+- A new tool or feature is added
+- Architecture decisions change
+- Tooling is added or modified
+
+`docs/` contains human-facing planning and learning documents:
+- `docs/SUMMARY.md` — chronological learning and development log
+- `docs/LEARNING_PLAN.md` — sequenced learning goals by stage
+- `docs/DEV_PLAN.md` — sequenced feature roadmap by stage
+
+Do not modify files in `docs/` unless explicitly asked to do so.
 
 ## Commit workflow
 
