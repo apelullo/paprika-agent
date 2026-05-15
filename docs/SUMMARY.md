@@ -108,6 +108,36 @@ implementation velocity, commit message *why* (not just *what*).
 - `dict | str` return type on tools — honest about error states; LLM reads
   the string and handles it gracefully
 
+### 2026-05-15 — Planning Docs & Hook Fix
+
+**Commits:** `20c5c56` → `22b1657`
+
+#### What was built
+- `docs/` folder created with three human-facing planning documents:
+  - `DEV_PLAN.md` — sequenced 6-stage feature roadmap with guiding principles
+    and portfolio narrative
+  - `LEARNING_PLAN.md` — learning goals anchored to each project stage
+  - `SUMMARY.md` — this file; chronological development and learning log
+- `CLAUDE.md` Planning section updated: distinguishes `project_development_plan.md`
+  (Claude Code's operational memory) from `docs/` (human-facing artifacts);
+  adds guard against modifying `docs/` without explicit instruction
+- PostToolUse hook bug identified and fixed: `Bash(git push *)` only matched
+  commands *starting* with `git push`, so the hook silently skipped every
+  chained invocation (`git add && git commit && git push`); fixed to
+  `Bash(*git push*)` to match `git push` anywhere in the command string
+
+#### Concepts learned
+- **Shell glob matching in hook `if` conditions** — `*` matches any sequence
+  including spaces; leading `*` is required to match a non-prefix substring
+- **Hook silent failure mode** — a mismatched `if` condition produces no
+  error; the hook simply doesn't fire, making the bug invisible until noticed
+  by the absence of expected output
+
+#### Design decisions made
+- `docs/` is human-facing and write-protected from Claude Code unless
+  explicitly asked — keeps the operational memory (`project_development_plan.md`)
+  separate from the narrative/learning artifacts
+
 ---
 
 ## Open Items & Reminders

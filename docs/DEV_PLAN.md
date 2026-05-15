@@ -35,7 +35,7 @@ test discipline, and CI/CD — strong foundation.
 - [x] Full pytest suite (unit + async integration tests)
 - [x] ruff lint + format + pre-commit hooks
 - [x] GitHub Actions CI (ruff + pytest gates)
-- [x] PostToolUse CI poll hook
+- [x] PostToolUse CI poll hook (glob fixed: `Bash(*git push*)` to match chained commands)
 - [x] `CLAUDE.md` with architecture and workflow docs
 - [x] Conventional commit history
 
