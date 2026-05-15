@@ -45,6 +45,11 @@ New tools that read recipe data should call `await _populate_cache()` first and 
 
 Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`.
 
+## Planning
+
+`project_development_plan.md` in the repo root is the master development plan.
+Update it when milestones are hit or plans change.
+
 ## Commit workflow
 
 Before committing: show the git diff and proposed commit message for review.
