@@ -12,7 +12,7 @@
 - `search_recipes` — keyword search across titles (substring + token order independence)
 - ruff lint rule expansion (B, UP, N) + pre-commit integration
 - CI pipeline with ruff check, ruff format, and pytest gates
-- PostToolUse hook: poll loop CI status reporter after git push
+- PostToolUse hook: poll loop CI status reporter after git push (fixed glob pattern to match chained commands)
 
 ## Planned features (near → long term)
 1. **Local SQLite DB** — persist recipe cache across server restarts; eliminates cold-start API calls. Needs cache invalidation/refresh strategy. Likely requires a `cache.py` or `db.py` (also the mypy trigger).
