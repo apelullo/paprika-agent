@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git push *)",
+            "if": "Bash(*git push*)",
             "command": "RUN_ID=$(gh run list --repo apelullo/paprika-agent --limit 1 --json databaseId --jq '.[0].databaseId'); WAITED=0; while [ \"$(gh run view $RUN_ID --repo apelullo/paprika-agent --json status --jq '.status')\" != \"completed\" ] && [ $WAITED -lt 120 ]; do sleep 5; WAITED=$((WAITED + 5)); done; gh run view $RUN_ID --repo apelullo/paprika-agent",
             "timeout": 120,
             "statusMessage": "Watching CI..."
