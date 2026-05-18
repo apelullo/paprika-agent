@@ -1,10 +1,11 @@
 # Project Development Plan
 
-## Current state (as of 2026-05-15)
+## Current state (as of 2026-05-18)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest)
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`
 **Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`), bearer token auth from `.env`
+**Stage:** 1 — MCP Tool Suite (~85% complete)
 
 ## Completed milestones
 - `list_recipes` — fetch and cache all recipes from Paprika account
@@ -12,20 +13,29 @@
 - `search_recipes` — keyword search across titles (substring + token order independence)
 - ruff lint rule expansion (B, UP, N) + pre-commit integration
 - CI pipeline with ruff check, ruff format, and pytest gates
-- PostToolUse hook: poll loop CI status reporter after git push (fixed glob pattern to match chained commands)
+- PostToolUse hook: poll loop CI status reporter after git push
+- MIT license
+- README: Features, Quick Start, Tech Stack, Roadmap sections
 
-## Planned features (near → long term)
-1. **Local SQLite DB** — persist recipe cache across server restarts; eliminates cold-start API calls. Needs cache invalidation/refresh strategy. Likely requires a `cache.py` or `db.py` (also the mypy trigger).
-2. **2-way account sync** — write back to Paprika (create/edit/delete recipes) via POST/PUT/PATCH/DELETE; requires conflict handling and local DB for state tracking.
-3. **Local network deployment** — move MCP server to another machine on the local network; first step toward custom client and cloud hosting.
-4. **Custom client** — beyond Claude Desktop.
-5. **Cloud deployment**
-6. **Semantic search with embeddings** — vague/natural language queries (e.g. "something spicy"); longer-term, part of the recipe recommender vision.
-7. **Recipe recommender system**
+## Next actions (Stage 1 remaining)
+- README: Architecture section
+- README: Demo section (defer until full Stage 1 feature set complete)
+- README staleness check — pre-commit hook or CI job
+- `git-cliff` / CHANGELOG — automated changelog from conventional commits
+- Tool input validation — FastMCP/Pydantic; clear error messages
+- `sync_recipes` tool — incremental (ID set diff) + full refresh
+- `search_recipes` expansion — ingredients, source, prep instructions
+
+## Stage roadmap
+1. **MCP Tool Suite** — current; see next actions above
+2. **Local Network Deployment** (compressed) — bind to LAN IP, connect Claude Desktop remotely; minimal ops
+2.5. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag
+3. **Custom Client** (compressed) — minimal Python script connecting to Stage 2 server; understand protocol from both sides
+4. **Semantic Search & Embeddings** — sentence-transformers, FAISS, hybrid search, embedding storage in Stage 2.5 DB
+5. **Recipe Recommender** — Bayesian preference model on 365+ day dinner history, temporal modeling, `recommend_recipes` tool, analytics dashboard
+6. **Cloud, App & MLOps** — AWS/EC2, Docker, CD pipeline, Postgres migration, pgvector, full frontend, full CLI, observability
 
 ## Tooling roadmap
-1. **mypy or Pyright** — trigger: second source file added, or functions start calling each other.
-2. **Semantic search deps** (e.g. sentence-transformers) — trigger: when embedding-based search is prioritized.
-
-## Planned documentation
-- **Learning/development summary doc** — will document recaps, learning milestones, and design decisions for long-term reference. `.gitignore` status TBD.
+- **mypy or Pyright** — trigger: second source file added, or functions start calling each other
+- **sentence-transformers + FAISS** — trigger: Stage 4 begins
+- **SQLAlchemy or raw sqlite3** — trigger: Stage 2.5 begins (discuss ORM vs. raw SQL then)
