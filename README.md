@@ -58,6 +58,24 @@ own (run `which uv` to find your `uv` binary):
 
 Restart Claude Desktop. The paprika tools will be available in any new chat.
 
+## Architecture
+
+Paprika Agent is built around a single guiding principle: **every design
+decision should extend naturally, not require replacement as the project grows.**
+
+On first tool call, the server eagerly fetches all recipes from the Paprika
+API and populates two module-level structures: `_recipe_cache` (uid → full
+recipe data) and `_name_index` (normalized name → uid). Subsequent calls are
+pure in-memory lookups — zero additional API calls. This cache is the
+foundation all current tools share and the natural predecessor to a persistent
+local database.
+
+Tools are thin by design. Each one calls `_populate_cache()`, reads from the
+shared cache, and returns a result. `search_recipes` today does substring
+matching over titles; tomorrow it does semantic search over embeddings — same
+tool interface, smarter implementation underneath. The architecture doesn't
+change; the sophistication grows inside it.
+
 ## Tech Stack
 Python · FastMCP · uv · Paprika API
 
