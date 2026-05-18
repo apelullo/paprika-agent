@@ -5,3 +5,12 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: readme-staleness-check
+        name: README staleness check
+        language: script
+        entry: scripts/check_readme_staleness.sh
+        pass_filenames: false
+        always_run: true
+        verbose: true
