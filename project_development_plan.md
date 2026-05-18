@@ -5,9 +5,11 @@
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest)
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`
 **Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`), bearer token auth from `.env`
-**Stage:** 1 — MCP Tool Suite (~85% complete)
+**Stage:** 1 — MCP Tool Suite (~90% complete)
 
 ## Completed milestones
+- README: Architecture section
+- README staleness pre-commit hook (warns, never blocks)
 - `list_recipes` — fetch and cache all recipes from Paprika account
 - `get_recipe` — retrieve full recipe details by name (case-insensitive, curly apostrophe normalization)
 - `search_recipes` — keyword search across titles (substring + token order independence)
@@ -18,9 +20,7 @@
 - README: Features, Quick Start, Tech Stack, Roadmap sections
 
 ## Next actions (Stage 1 remaining)
-- README: Architecture section
 - README: Demo section (defer until full Stage 1 feature set complete)
-- README staleness check — pre-commit hook or CI job
 - `git-cliff` / CHANGELOG — automated changelog from conventional commits
 - Tool input validation — FastMCP/Pydantic; clear error messages
 - `sync_recipes` tool — incremental (ID set diff) + full refresh
