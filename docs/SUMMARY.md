@@ -138,16 +138,56 @@ implementation velocity, commit message *why* (not just *what*).
   explicitly asked — keeps the operational memory (`project_development_plan.md`)
   separate from the narrative/learning artifacts
 
+### 2026-05-16 — README, License & AI-Assisted Workflow
+
+**Commits:** `8b58109` → current
+
+#### What was built
+- MIT license added (`LICENSE`) — unblocks public promotion of the repo
+- README updated: Features section reflects all three shipped tools;
+  roadmap cleaned to remove already-completed items
+- README Quick Start section added: prerequisites, install, `.env` config,
+  Claude Desktop connection instructions with machine-specific path guidance
+- CI gap closed: ruff lint + format checks added to `ci.yml` so violations
+  can't reach `master` without pre-commit installed
+- Architecture section (in progress)
+
+#### Concepts learned
+- **MIT license** — most permissive open source license; "do whatever you
+  want, just keep my name on it"; absence signals inexperience to senior
+  engineers; required before public promotion
+- **Quick Start design** — prerequisites → install → configure → run →
+  connect; the bar is: zero to working in under 5 minutes with no guessing
+- **Machine-specific path documentation** — `which uv` pattern; telling
+  readers to substitute their own paths rather than hardcoding yours
+- **Division of labor between AI tools** — this project chat holds learning
+  arc, growth areas, portfolio narrative, and cross-session continuity;
+  Claude Code holds project execution context and writes/edits files directly;
+  copy-paste handoffs between tools introduce errors — execute where the
+  context lives; discuss and decide in the chat that holds the *why*
+- **`--check` flag in CI** — `ruff format --check` verifies formatting
+  without modifying files; correct CI behavior is fail loudly, not silently fix
+- **README staleness** — a public repo README that doesn't reflect current
+  reality signals inexperience; treat it as a living document with a
+  mental or automated checklist on every commit
+
+#### Design decisions made
+- Claude Code owns `project_development_plan.md` (operational); this chat
+  owns `docs/` (narrative/learning) — clean separation of AI tool concerns
+- Demo section deferred until full Stage 1 feature set is complete — one
+  recording captures everything rather than needing to re-record later
+
 ---
 
 ## Open Items & Reminders
 
 ### TODO (immediate)
-- [ ] Add MIT license to repo root
-- [ ] Add Demo, Quick Start, Architecture sections to README
+- [ ] README: Architecture section
+- [ ] README: Demo section (after Stage 1 feature set complete)
 - [ ] Add README staleness check to pre-commit or CI
-- [ ] Review and tighten commit message *why* on non-obvious changes
 - [ ] Add `git-cliff` for automated CHANGELOG generation
+- [ ] Tool input validation — FastMCP/Pydantic behavior
+- [ ] `sync_recipes` tool — incremental + full refresh modes
 
 ### Deferred ideas (flagged, not forgotten)
 - Local SQLite persistent cache — eliminates cold-start API calls on restart
