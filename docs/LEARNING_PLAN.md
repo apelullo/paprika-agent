@@ -16,6 +16,30 @@
    appears as in-memory dict → SQLite → Redis → CDN)
 4. **Honest sequencing** — defer concepts that require foundations not yet
    laid; flag them clearly rather than skipping them silently
+5. **Relevance density over volume** — in learning as in context windows,
+   tightly relevant material at the right moment beats exhaustive coverage
+   too early; sequence for maximum integration, not maximum coverage
+
+---
+
+## Recurring Check-ins (Every 2-3 Sessions)
+
+These questions should be revisited periodically — they don't have permanent
+answers and must be recalibrated as the project and AI landscape evolve:
+
+- **Tool/LLM boundary** — has it shifted since last check? Are any current
+  tools candidates for native LLM reasoning? Are any LLM reasoning steps
+  candidates for tools?
+- **Context sizing intuition** — are relevance density tradeoffs being made
+  deliberately? Is the intuition for "too large for context" improving?
+- **Edge cases** — are any reasoning, synthesis, or judgment tasks becoming
+  complex enough to warrant tool calls (e.g. structured scratchpad,
+  chain-of-thought as an inspectable step)?
+- **Scope discipline** — are Stage 6 ideas staying flagged rather than
+  implemented? Is the current stage's learning arc being completed first?
+- **Progress recalibration** — honest assessment of what's been built vs.
+  what a typical developer would have at this point; correct for
+  underestimation bias
 
 ---
 
@@ -35,10 +59,18 @@ lifecycle before adding network complexity.
 - [x] Pre-commit hooks (ruff lint + format)
 - [x] GitHub Actions CI pipeline
 - [x] Race condition awareness (CI polling solution)
+- [x] Tool design philosophy — why tools beat LLM reasoning for retrieval
+      (context scarcity, determinism, composability, latency/cost)
+- [x] The shifting tool/LLM boundary — current rule of thumb and why it
+      must be periodically reassessed
+- [x] Relevance density — context quality is signal-to-token ratio, not
+      raw size; a foundational concept for all future context design
+- [x] Function composition via structured tool output vs. probabilistic
+      reasoning output
 
 ### Remaining (before Stage 2)
-- [ ] **Tool input validation** — what happens when the LLM passes bad input?
-  FastMCP's validation behavior; Pydantic under the hood
+- [ ] **Tool input validation** — what happens when the LLM passes bad
+  input? FastMCP's validation behavior; Pydantic under the hood
 - [ ] **Error handling patterns** — MCP-specific error surfacing vs. Python
   exceptions; when to return a string vs. raise
 - [ ] **Tool docstring design** — docstrings as LLM contracts; how wording
@@ -47,6 +79,9 @@ lifecycle before adding network complexity.
   define a dataclass or TypedDict for richer structure
 - [ ] **`git-cliff` setup** — automated CHANGELOG from conventional commits;
   reinforces commit discipline with visible output
+- [ ] **Context sizing intuition (calibration #1)** — first deliberate
+  assessment of what "too large for context" means in practice; revisit
+  at each stage until intuition is demonstrably accurate
 
 ---
 
@@ -68,6 +103,9 @@ service configuration before cloud introduces additional abstraction.
   service that survives reboots
 - [ ] **Local network security** — binding to LAN IP vs. 0.0.0.0; firewall
   basics; why you don't expose auth endpoints on a LAN without protection
+- [ ] **Tool/LLM boundary check-in #1** — with networking in place, do any
+  new tool candidates emerge? Does the boundary look different from both
+  sides of the network?
 
 ---
 
@@ -88,6 +126,9 @@ contract from both sides.
   interface; help text as documentation
 - [ ] **Configuration management** — `pydantic-settings` for typed,
   validated config from env + files
+- [ ] **Context sizing check-in #1** — with a real client sending queries,
+  what does actual context usage look like? Is relevance density intuition
+  matching observed behavior?
 
 ---
 
@@ -129,6 +170,11 @@ separation, UX design basics, and what "production-ready" really means.
   (Streamlit, Gradio, or FastHTML) to build an interface
 - [ ] **Observability** — structured logging, metrics, health endpoints;
   knowing what your app is doing in production
+- [ ] **Tool/LLM boundary check-in #2** — with a full app in place, which
+  current tools are candidates for native LLM reasoning? Which LLM steps
+  are candidates for tools?
+- [ ] **Reasoning as a tool** — chain-of-thought as an inspectable,
+  composable step; when structured scratchpads beat implicit reasoning
 
 ---
 
@@ -139,17 +185,25 @@ where the data science background becomes a force multiplier.
 
 ### Concepts to learn
 - [ ] **Embeddings and vector search** — sentence transformers, FAISS or
-  pgvector; semantic search over recipes
+  pgvector; semantic search over recipes; `search_recipes` evolution from
+  substring to semantic (same architecture, smarter implementation)
 - [ ] **Knowledge graphs** — recipe → ingredient → technique relationships;
   graph traversal for recommendation
 - [ ] **Recommendation systems** — collaborative filtering, content-based,
-  hybrid; Bayesian inference for preference modeling
+  hybrid; Bayesian inference on 365+ day dinner history; temporal trend
+  modeling
 - [ ] **MLOps** — model versioning, serving, monitoring, drift detection;
   connecting to the observability foundation from Stage 5
 - [ ] **Fine-tuning and RAG** — when to fine-tune vs. retrieve; building
   a RAG pipeline over recipe data
 - [ ] **Continuous learning** — updating models as new dinner data arrives;
   temporal trends in the 365+ day dataset
+- [ ] **Tool/LLM boundary check-in #3** — at this stage, LLM reasoning
+  *is* the tool in many cases (semantic search, RAG); how has the boundary
+  shifted from Stage 1? What's the final mental model?
+- [ ] **Context sizing check-in (final)** — with embeddings, RAG, and rich
+  recipe data in play, is context design being made deliberately and
+  accurately? Has intuition been demonstrated to be calibrated?
 
 ---
 
@@ -161,3 +215,7 @@ where the data science background becomes a force multiplier.
   implementing
 - **Underestimating progress** — Art has a strong tendency to undervalue
   what he's built; recalibrate frequently against the stage map above
+- **Treating the tool/LLM boundary as fixed** — it shifts as models improve;
+  reassess periodically rather than assuming Stage 1 answers hold forever
+- **Optimizing for context size instead of relevance density** — bigger
+  context is not better context; always ask "is this token earning its place?"

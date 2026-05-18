@@ -121,10 +121,7 @@ implementation velocity, commit message *why* (not just *what*).
 - `CLAUDE.md` Planning section updated: distinguishes `project_development_plan.md`
   (Claude Code's operational memory) from `docs/` (human-facing artifacts);
   adds guard against modifying `docs/` without explicit instruction
-- PostToolUse hook bug identified and fixed: `Bash(git push *)` only matched
-  commands *starting* with `git push`, so the hook silently skipped every
-  chained invocation (`git add && git commit && git push`); fixed to
-  `Bash(*git push*)` to match `git push` anywhere in the command string
+- PostToolUse hook bug identified and fixed
 
 #### Concepts learned
 - **Shell glob matching in hook `if` conditions** — `*` matches any sequence
@@ -138,44 +135,51 @@ implementation velocity, commit message *why* (not just *what*).
   explicitly asked — keeps the operational memory (`project_development_plan.md`)
   separate from the narrative/learning artifacts
 
-### 2026-05-16 — README, License & AI-Assisted Workflow
+### 2026-05-16 — README, License, AI Workflow, Tool Design Philosophy & Roadmap Restructure
 
 **Commits:** `8b58109` → current
 
 #### What was built
-- MIT license added (`LICENSE`) — unblocks public promotion of the repo
-- README updated: Features section reflects all three shipped tools;
-  roadmap cleaned to remove already-completed items
-- README Quick Start section added: prerequisites, install, `.env` config,
-  Claude Desktop connection instructions with machine-specific path guidance
-- CI gap closed: ruff lint + format checks added to `ci.yml` so violations
-  can't reach `master` without pre-commit installed
-- Architecture section (in progress)
+- MIT license added (`LICENSE`)
+- README updated: features, roadmap, Quick Start section
+- CI gap closed: ruff lint + format checks added to `ci.yml`
+- `docs/DEV_PLAN.md` restructured: stage order revised to prioritize ML
+  before infrastructure (Stage 2.5 added, Stage 4 is now semantic search,
+  Stage 5 is recommender, Stage 6 is cloud/app/MLOps)
+- `~/.claude/memory/user_background.md` updated: career context, target
+  roles (DS + AI engineer + analytics engineer), software engineering
+  growth areas, building-in-the-open intent
+- Doc update process formalized (see below)
 
 #### Concepts learned
-- **MIT license** — most permissive open source license; "do whatever you
-  want, just keep my name on it"; absence signals inexperience to senior
-  engineers; required before public promotion
+- **MIT license** — most permissive open source license; absence signals
+  inexperience; required before public promotion
 - **Quick Start design** — prerequisites → install → configure → run →
-  connect; the bar is: zero to working in under 5 minutes with no guessing
-- **Machine-specific path documentation** — `which uv` pattern; telling
-  readers to substitute their own paths rather than hardcoding yours
-- **Division of labor between AI tools** — this project chat holds learning
-  arc, growth areas, portfolio narrative, and cross-session continuity;
-  Claude Code holds project execution context and writes/edits files directly;
-  copy-paste handoffs between tools introduce errors — execute where the
-  context lives; discuss and decide in the chat that holds the *why*
-- **`--check` flag in CI** — `ruff format --check` verifies formatting
-  without modifying files; correct CI behavior is fail loudly, not silently fix
-- **README staleness** — a public repo README that doesn't reflect current
-  reality signals inexperience; treat it as a living document with a
-  mental or automated checklist on every commit
+  connect; zero to working in under 5 minutes with no guessing
+- **Division of labor between AI tools** — project chat holds learning arc
+  and continuity; Claude Code holds execution context; execute where the
+  context lives
+- **Tool design philosophy for LLMs** — four reasons tools beat LLM
+  reasoning for retrieval: context scarcity, determinism, composability,
+  latency/cost at scale
+- **The shifting tool/LLM boundary** — not fixed; reassess periodically;
+  current rule: tools for deterministic lookup, external state, computation,
+  or data too large for context
+- **Relevance density** — context quality = signal-to-token ratio, not
+  raw size; optimizing for relevance density is a recurring design concern
+- **Context sizing intuition** — not a fixed threshold; depends on relevance
+  density, continuity needs, model limits; calibrate iteratively
+- **Edge cases: reasoning as a tool** — chain-of-thought as structured
+  scratchpad; reasoning/synthesis are not categorically exempt from tools
+- **ML before infrastructure** — for DS/AI engineer portfolio, the ML
+  system is the differentiator; infrastructure wraps it, not the reverse
 
 #### Design decisions made
-- Claude Code owns `project_development_plan.md` (operational); this chat
-  owns `docs/` (narrative/learning) — clean separation of AI tool concerns
-- Demo section deferred until full Stage 1 feature set is complete — one
-  recording captures everything rather than needing to re-record later
+- Roadmap reordered: Stage 2 compressed, Stage 2.5 (local DB) added,
+  Stage 4 = semantic search, Stage 5 = recommender, Stage 6 = cloud/ops
+- Portfolio narrative rewritten to target DS, AI engineer, analytics
+  engineer roles explicitly
+- Doc update process formalized as a named, repeatable workflow
 
 ---
 
@@ -189,20 +193,92 @@ implementation velocity, commit message *why* (not just *what*).
 - [ ] Tool input validation — FastMCP/Pydantic behavior
 - [ ] `sync_recipes` tool — incremental + full refresh modes
 
+### Recurring check-ins (every 2-3 sessions)
+- [ ] Where does the tool/LLM boundary sit today? Has it shifted?
+- [ ] Context sizing calibration — is relevance density intuition improving?
+- [ ] Edge cases: are any reasoning/synthesis tasks candidates for tools?
+- [ ] Progress recalibration — honest assessment vs. typical developer output
+- [ ] Scope discipline — are future-stage ideas staying flagged, not built?
+
 ### Deferred ideas (flagged, not forgotten)
-- Local SQLite persistent cache — eliminates cold-start API calls on restart
-- Two-way sync with deletion flag ("safe sync only" mode — wife-approved)
-- Incremental sync: set diff on ID list to find new/deleted recipes
-- Timestamp-based update detection on set intersection
-- `search_recipes` expansion: ingredients, prep instructions, source, nutrition
-- Semantic search / embeddings / knowledge graphs (Stage 6)
-- Vision models for image-based ingredient prediction (Stage 6)
-- AWS EC2 "manager" server with Route 53 A-record updater (Stage 4-5)
-- MLOps + observability dashboards (Stage 6)
-- Dataset section in README (add back when analytics features exist)
+- Local SQLite persistent cache — Stage 2.5
+- Two-way sync with deletion flag ("safe sync only") — Stage 2.5
+- `search_recipes` expansion: ingredients, prep, source, nutrition
+- Semantic search / embeddings / knowledge graphs — Stage 4
+- Vision models for image-based ingredient prediction — Stage 6
+- AWS EC2 manager + Route 53 updater — Stage 6
+- MLOps + observability dashboards — Stage 6
+- Dataset section in README — add back when analytics features exist
 
 ### Resources to pursue
 - *Designing Data-Intensive Applications* — Kleppmann (systems design)
 - `git-cliff` or `commitizen` — automated changelog from conventional commits
-- ADRs (Architecture Decision Records) — when project architecture matures
+- ADRs (Architecture Decision Records) — as project architecture matures
 - TDD formalization — test-first as a discipline, not just a habit
+
+---
+
+## Doc Update Process
+
+> Run this at the end of any session where significant progress was made,
+> plans changed, or new concepts were learned. Keeps all interconnected
+> documents consistent without ad-hoc one-file-at-a-time updates.
+
+### Trigger conditions
+- A stage is completed or its scope changes
+- The roadmap order changes
+- New concepts are learned that belong in the learning plan
+- Career goals, target roles, or portfolio strategy shift
+- A new tool, pattern, or workflow is adopted
+- Any memory file becomes stale relative to current reality
+
+### Document ownership map
+
+| File | Owner | Update when |
+|---|---|---|
+| `docs/SUMMARY.md` | This project chat | New concepts, design decisions, session ends |
+| `docs/LEARNING_PLAN.md` | This project chat | Stage completed, concept added, check-ins evolve |
+| `docs/DEV_PLAN.md` | This project chat | Roadmap changes, milestone completed |
+| `project_development_plan.md` | Claude Code | Any DEV_PLAN change; lean, current state + next actions |
+| `CLAUDE.md` (project) | Claude Code | Architecture changes, new conventions |
+| `~/.claude/CLAUDE.md` (global) | Manual | Global preferences change |
+| `~/.claude/memory/user_background.md` | This project chat | Career goals, background, style evolves |
+| `~/.claude/memory/feedback_recaps.md` | This project chat | Recap preferences change |
+| `~/.claude/memory/MEMORY.md` | Claude Code (auto) | Do not edit manually |
+
+### Step-by-step
+
+**Step 1 — This chat updates `docs/` files directly via filesystem connector**
+- `SUMMARY.md` — session entry: built, learned, decided; update TODOs
+- `LEARNING_PLAN.md` — check off completed; add concepts to right stage
+- `DEV_PLAN.md` — mark completed; update order/scope; update narrative
+
+**Step 2 — This chat updates global memory files if needed**
+- `user_background.md` — career context, roles, growth areas, style
+- `feedback_recaps.md` — recap preferences
+
+**Step 3 — Claude Code prompt (run after Steps 1 and 2)**
+```
+Three things in sequence — wait for confirmation before each:
+
+1. docs/ files were updated externally. Run git status, show the diff
+   across all changed files, propose a commit message. Do not commit yet.
+
+2. After that commit: update project_development_plan.md to reflect any
+   stage order, milestone, or next-action changes. Lean — no narrative.
+   Show diff before committing.
+
+3. After that commit: check CLAUDE.md (project-level) for needed updates
+   based on architecture or workflow changes this session. If none needed,
+   say so explicitly. Show diff before committing if changes exist.
+```
+
+### What this is NOT
+- Not a replacement for real-time notes mid-session — capture decisions
+  as they happen, don't reconstruct at the end
+- Not needed for trivial changes (typos, one-line fixes)
+- Not needed if Claude Code already updated files as part of normal workflow
+
+### Frequency
+- **End of every meaningful session** — even if only SUMMARY.md changes
+- **Immediately** when roadmap order or career framing changes
