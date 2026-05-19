@@ -17,11 +17,11 @@
 - CI pipeline with ruff check, ruff format, and pytest gates
 - PostToolUse hook: poll loop CI status reporter after git push
 - MIT license
+- `git-cliff` / CHANGELOG — automated changelog from conventional commits
 - README: Features, Quick Start, Tech Stack, Roadmap sections
 
 ## Next actions (Stage 1 remaining)
 - README: Demo section (defer until full Stage 1 feature set complete)
-- `git-cliff` / CHANGELOG — automated changelog from conventional commits
 - Tool input validation — FastMCP/Pydantic; clear error messages
 - `sync_recipes` tool — incremental (ID set diff) + full refresh
 - `search_recipes` expansion — ingredients, source, prep instructions
