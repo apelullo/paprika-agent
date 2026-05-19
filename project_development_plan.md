@@ -1,11 +1,11 @@
 # Project Development Plan
 
-## Current state (as of 2026-05-18)
+## Current state (as of 2026-05-19)
 
-**Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest)
+**Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest) + git-cliff
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`
 **Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`), bearer token auth from `.env`
-**Stage:** 1 — MCP Tool Suite (~90% complete)
+**Stage:** 1 — MCP Tool Suite (~95% complete) — target tag: `v0.1.0`
 
 ## Completed milestones
 - README: Architecture section
@@ -18,13 +18,15 @@
 - PostToolUse hook: poll loop CI status reporter after git push
 - MIT license
 - `git-cliff` / CHANGELOG — automated changelog from conventional commits
-- README: Features, Quick Start, Tech Stack, Roadmap sections
+- Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 6)
+- README: Features, Quick Start, Architecture, Tech Stack, Roadmap sections
 
-## Next actions (Stage 1 remaining)
-- README: Demo section (defer until full Stage 1 feature set complete)
+## Next actions (Stage 1 remaining — before `v0.1.0`)
 - Tool input validation — FastMCP/Pydantic; clear error messages
 - `sync_recipes` tool — incremental (ID set diff) + full refresh
-- `search_recipes` expansion — ingredients, source, prep instructions
+- `search_recipes` expansion — ingredients, source, prep instructions (discuss scope first)
+- README: Demo section — defer until above tools complete, one recording captures everything
+- Tag `v0.1.0` and run release workflow when above are done
 
 ## Stage roadmap
 1. **MCP Tool Suite** — current; see next actions above
@@ -39,3 +41,4 @@
 - **mypy or Pyright** — trigger: second source file added, or functions start calling each other
 - **sentence-transformers + FAISS** — trigger: Stage 4 begins
 - **SQLAlchemy or raw sqlite3** — trigger: Stage 2.5 begins (discuss ORM vs. raw SQL then)
+- **git-cliff CI automation** — trigger: Stage 4-5; add tag-triggered changelog regeneration to `ci.yml`
