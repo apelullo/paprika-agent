@@ -81,6 +81,8 @@ memory. Update it when:
 
 Do not modify files in `docs/` unless explicitly asked to do so.
 
+`docs/HANDOFF.md` — paste as the first message when starting a new project chat to restore full context.
+
 ## Commit workflow
 
 Before committing: show the git diff and proposed commit message for review.
