@@ -189,19 +189,80 @@ implementation velocity, commit message *why* (not just *what*).
 - README staleness check implemented as advisory pre-commit (Option A)
   rather than blocking CI (Option B) — solo project, discipline sufficient
 
+### 2026-05-19 — git-cliff, Version Tags & Changelog Workflow
+
+**Commits:** `53d8755` → current
+
+#### What was built
+- `git-cliff` added as dev dependency (`git-cliff==2.13.1`)
+- `cliff.toml` configured: groups commits by type, body/footer included,
+  conventional commit format, sorts oldest-first
+- `CHANGELOG.md` generated from full commit history — all commits land in
+  `[Unreleased]` until version tags are introduced
+- `docs/DEV_PLAN.md` updated: Version Tag Map added (v0.1.0 → v1.0.0),
+  target tag added to each stage header, CI automation trigger documented
+  for Stage 4-5, Stage 1 status bumped to ~95%
+- `docs/SUMMARY.md` + `docs/LEARNING_PLAN.md` synced to reflect all
+  completed Stage 1 items
+
+#### Concepts learned
+- **git-cliff** — generates `CHANGELOG.md` from conventional commit history;
+  config-driven (cliff.toml); output quality directly reflects commit
+  message discipline
+- **Version tags vs. CI wiring** — two separate concerns; tagging is manual
+  and immediate (one command per stage completion); CI automation of
+  changelog regeneration is deferred to Stage 4-5 when release cadence
+  warrants the overhead
+- **Version tag workflow (manual, until Stage 4-5):**
+  ```bash
+  git tag v0.1.0
+  git push origin v0.1.0
+  uv run git-cliff --output CHANGELOG.md
+  git add CHANGELOG.md && git commit -m "chore: update changelog for v0.1.0"
+  git push
+  ```
+- **`[Unreleased]` vs versioned sections** — without tags, all commits land
+  in one bucket; tags create named release sections grouping commits between
+  them; the changelog becomes a versioned history, not a running log
+- **CI tag trigger** — `on: push: tags: ['v[0-9]*']` fires only on tag
+  pushes, not every commit; avoids changelog noise on small changes
+- **Config file formats recap** — `.toml` (declarative, Python-friendly,
+  used for pyproject.toml + cliff.toml), `.yaml` (declarative, DevOps-
+  friendly, used for GitHub Actions), `.json` (strict, used for Claude
+  Desktop config), `.env` (simple KEY=VALUE, used for secrets)
+- **DevOps = CI/CD configured in YAML** — the GitHub Actions workflow
+  is a DevOps task; declarative description of what runs, when, and where
+
+#### Design decisions made
+- `CHANGELOG.md` committed and tracked (not gitignored) — it's a portfolio
+  artifact and living document
+- git-cliff run manually between tags until Stage 4-5 CI automation
+- Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 6)
+- Stages 2 + 2.5 share a tag (`v0.2.0`) — logical unit of work
+
 ---
 
 ## Open Items & Reminders
 
-### TODO (immediate — Stage 1 remaining)
-- [ ] `git-cliff` / CHANGELOG — automated changelog from conventional commits
+### TODO (immediate — Stage 1 remaining before `v0.1.0`)
 - [ ] Tool input validation — FastMCP/Pydantic behavior
 - [ ] `sync_recipes` tool — incremental + full refresh modes
 - [ ] `search_recipes` expansion — discuss scope before implementing
-- [ ] README: Demo section — defer until full Stage 1 feature set complete
+- [ ] README: Demo section — defer until remaining tools complete
+- [ ] **Tag `v0.1.0` and run release workflow** when above are done
+
+### Stage completion release workflow (manual until Stage 4-5)
+Run this at the end of every stage, before moving to the next:
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+uv run git-cliff --output CHANGELOG.md
+git add CHANGELOG.md && git commit -m "chore: update changelog for vX.Y.Z"
+git push
+```
 
 ### Recurring check-ins (every 2-3 sessions)
-- [ ] Where does the tool/LLM boundary sit today? Has it shifted?
+- [ ] Where does the tool/LMM boundary sit today? Has it shifted?
 - [ ] Context sizing calibration — is relevance density intuition improving?
 - [ ] Edge cases: are any reasoning/synthesis tasks candidates for tools?
 - [ ] Progress recalibration — honest assessment vs. typical developer output
@@ -217,10 +278,11 @@ implementation velocity, commit message *why* (not just *what*).
 - AWS EC2 manager + Route 53 updater — Stage 6
 - MLOps + observability dashboards — Stage 6
 - Dataset section in README — add back when analytics features exist
+- Claude memory management MCP server — future project after Paprika +
+  Yelp/SAMHSA; sits at intersection of everything learned by then
 
 ### Resources to pursue
 - *Designing Data-Intensive Applications* — Kleppmann (systems design)
-- `git-cliff` or `commitizen` — automated changelog from conventional commits
 - ADRs (Architecture Decision Records) — as project architecture matures
 - TDD formalization — test-first as a discipline, not just a habit
 
@@ -290,3 +352,4 @@ Three things in sequence — wait for confirmation before each:
 ### Frequency
 - **End of every meaningful session** — even if only SUMMARY.md changes
 - **Immediately** when roadmap order or career framing changes
+- **At every stage completion** — run release workflow first, then doc update

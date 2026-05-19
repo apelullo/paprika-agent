@@ -21,9 +21,45 @@
 
 ---
 
+## Version Tag Map
+
+Each stage completion gets a version tag. Tags drive the changelog — git-cliff
+groups commits between tags into named releases rather than one `[Unreleased]`
+bucket. Run `git-cliff` manually after tagging until Stage 4-5, when CI
+automation of changelog generation on tag push becomes worth the overhead.
+
+| Version | Stage | Description |
+|---|---|---|
+| `v0.1.0` | Stage 1 | MCP tool suite complete — three tools, CI, tested, documented |
+| `v0.2.0` | Stage 2 + 2.5 | Local network deployment + SQLite DB + schema |
+| `v0.3.0` | Stage 3 | Custom client — minimal Python client connecting to network server |
+| `v0.4.0` | Stage 4 | Semantic search + embeddings — natural language recipe queries |
+| `v0.5.0` | Stage 5 | Recipe recommender + Bayesian inference |
+| `v1.0.0` | Stage 6 | Cloud deployment + standalone app + MLOps |
+
+**To tag a release:**
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+uv run git-cliff --output CHANGELOG.md  # regenerate with version groups
+git add CHANGELOG.md && git commit -m "chore: update changelog for v0.1.0"
+git push
+```
+
+**CI automation trigger (add at Stage 4-5):**
+```yaml
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+```
+
+---
+
 ## Stage 1 — MCP Tool Suite (Current)
 
-**Status: ~85% complete**
+**Status: ~95% complete**
+**Target tag: `v0.1.0`**
 **Portfolio signal:** API integration, caching design, async Python, test
 discipline, CI/CD — strong engineering foundation.
 
@@ -41,19 +77,17 @@ discipline, CI/CD — strong engineering foundation.
 - [x] `CLAUDE.md` with architecture and workflow docs
 - [x] Conventional commit history
 - [x] MIT license
-- [x] README: Features, Quick Start, Tech Stack, Roadmap
+- [x] README: Features, Quick Start, Architecture, Tech Stack, Roadmap
+- [x] README staleness check (advisory pre-commit hook)
+- [x] `git-cliff` + `CHANGELOG.md`
 
-### Remaining
-- [ ] **README: Architecture section** — one paragraph + optional diagram
-- [ ] **README: Demo section** — GIF or screenshot; highest recruiter
-  impact per effort; defer until full Stage 1 feature set complete
-- [ ] **README staleness check** — pre-commit hook or CI job
-- [ ] **`git-cliff` / CHANGELOG** — automated changelog from conventional
-  commits; portfolio artifact + commit discipline enforcer
+### Remaining (before `v0.1.0` tag)
 - [ ] **Tool input validation** — explicit FastMCP/Pydantic validation
 - [ ] **`sync_recipes` tool** — incremental (ID set diff) + full refresh
 - [ ] **`search_recipes` expansion** — ingredients, source, prep
   instructions; discuss scope before implementing
+- [ ] **README: Demo section** — GIF or screenshot; defer until remaining
+  tools are complete so one recording captures everything
 
 ### Deferred (flagged for later stages)
 - Local SQLite persistent cache — Stage 2.5
@@ -65,10 +99,10 @@ discipline, CI/CD — strong engineering foundation.
 
 ## Stage 2 — Local Network Deployment (Compressed)
 
+**Target tag: combined with Stage 2.5 → `v0.2.0`**
 **Goal:** Move the MCP server to a second machine on the local network.
 First separation of client and server into distinct physical hosts.
-Deliberately minimal — full service configuration deferred to Stage 6
-when cloud deployment adds real value.
+Deliberately minimal — full service configuration deferred to Stage 6.
 **Portfolio signal:** Networking fundamentals, service configuration,
 ops awareness — rare for a DS candidate.
 
@@ -90,11 +124,10 @@ ops awareness — rare for a DS candidate.
 
 ## Stage 2.5 — Local Database & Schema (NEW)
 
+**Target tag: combined with Stage 2 → `v0.2.0`**
 **Goal:** Design and implement a local SQLite database for persistent
 recipe storage and dinner history. The real prerequisite for all ML
 features — queryable, structured data that survives server restarts.
-This stage is squarely in the data engineering comfort zone and produces
-an immediately useful artifact.
 **Portfolio signal:** Data modeling, schema design, analytics engineering
 instincts — directly relevant to DS, analytics engineer, and AI engineer
 roles.
@@ -114,14 +147,12 @@ roles.
 - [ ] **Deletion protection flag** — "safe sync only" mode; never delete
   from DB without explicit override; configurable in `.env`
 - [ ] **dbt basics** — transformation layer on top of SQLite; analytics
-  views for downstream ML feature engineering; connects naturally to
-  DS background
+  views for downstream ML feature engineering
 - [ ] **Migration strategy** — schema versioning from day one; SQLite →
   Postgres migration path documented
 
 ### Architecture decision points
-- ORM vs. raw SQL — SQLAlchemy, SQLModel, or plain `sqlite3`; discuss
-  when closer; raw SQL first is likely right for learning
+- ORM vs. raw SQL — SQLAlchemy, SQLModel, or plain `sqlite3`
 - Trigger-based audit log vs. application-level history tracking
 - Feature table design — precomputed ML features vs. compute-on-read
 
@@ -129,14 +160,13 @@ roles.
 
 ## Stage 3 — Custom Client (Compressed)
 
+**Target tag: `v0.3.0`**
 **Goal:** Build a minimal Python client that connects to the MCP server
-programmatically without Claude Desktop. Understand the client/server
-contract from both sides. One focused session — not a full application.
+programmatically without Claude Desktop. One focused session.
 **Portfolio signal:** Protocol understanding, client/server architecture.
 
 ### Planned work
-- [ ] Understand MCP client protocol (JSON-RPC session, tool listing,
-  calling)
+- [ ] Understand MCP client protocol (JSON-RPC session, tool listing, calling)
 - [ ] Build minimal Python script: connect, list tools, call a tool,
   display result
 - [ ] Connect to Stage 2 network server by IP/hostname
@@ -144,17 +174,16 @@ contract from both sides. One focused session — not a full application.
 - [ ] Config: server address from env or CLI flag
 
 ### Deliberately deferred from original Stage 3
-- Full CLI with `typer`/`argparse` — revisit at Stage 5 with full app
+- Full CLI with `typer`/`argparse` — revisit at Stage 5
 - `pydantic-settings` config management — revisit at Stage 5
 
 ---
 
 ## Stage 4 — Semantic Search & Embeddings (PULLED FORWARD)
 
-**Goal:** Implement embedding-based semantic search over recipes — the
-highest-value, lowest-infrastructure ML feature. Runs entirely locally.
-No cloud required. This is the first place where Art's data science
-background becomes an explicit force multiplier.
+**Target tag: `v0.4.0`**
+**Goal:** Implement embedding-based semantic search over recipes.
+Runs entirely locally. No cloud required.
 **Portfolio signal:** Applied NLP, vector search, production ML thinking —
 core AI engineer and senior DS differentiator.
 
@@ -164,16 +193,16 @@ core AI engineer and senior DS differentiator.
 - [ ] **Vector index** — FAISS locally; pgvector when Postgres arrives
   at Stage 6; same interface, swappable backend
 - [ ] **`search_recipes` evolution** — same tool, smarter implementation;
-  natural language queries ("something light with what's in my fridge",
-  "spicy vegetarian under 30 minutes")
+  natural language queries ("something light with what's in my fridge")
 - [ ] **Embedding storage** — persist vectors in SQLite (Stage 2.5 DB);
   recompute only on recipe changes
 - [ ] **Hybrid search** — combine substring (deterministic) with semantic
-  (probabilistic) for best of both; configurable blend
-- [ ] **Evaluation** — how do you know the search is good? Relevance
-  metrics, manual spot-checks, test cases with known good results
+  (probabilistic); configurable blend
+- [ ] **Evaluation** — relevance metrics, manual spot-checks, test cases
 - [ ] **Tool/LLM boundary reassessment** — with semantic search in place,
   which current tool behaviors can move to native LLM reasoning?
+- [ ] **Wire git-cliff to CI on tag push** — add tag-triggered changelog
+  regeneration to `ci.yml`; automate what was previously manual
 
 ### Architecture decision points
 - Embedding model selection — balance quality vs. local inference speed
@@ -184,46 +213,38 @@ core AI engineer and senior DS differentiator.
 
 ## Stage 5 — Recipe Recommender & Bayesian Inference
 
-**Goal:** Build a personalized recipe recommender using the dinner history
-data (Stage 2.5) and embedding infrastructure (Stage 4). This is the
-project's primary ML showcase and the clearest demonstration of data
-science depth applied to a production system.
-**Portfolio signal:** The rarest combination for a DS portfolio — Bayesian
-inference, collaborative filtering, temporal modeling, and production
-engineering in one system.
+**Target tag: `v0.5.0`**
+**Goal:** Build a personalized recipe recommender using dinner history
+(Stage 2.5) and embedding infrastructure (Stage 4). Primary ML showcase.
+**Portfolio signal:** Bayesian inference, collaborative filtering, temporal
+modeling, and production engineering — the rarest DS portfolio combination.
 
 ### Planned work
-- [ ] **Exploratory analysis** — temporal patterns in 365+ day dinner
-  history; preference drift, frequency analysis, seasonal trends
-- [ ] **Content-based filtering** — recipe similarity via embeddings;
-  "more like this" recommendations
-- [ ] **Bayesian preference model** — prior over cuisine/ingredient
-  preferences updated with each dinner; uncertainty-aware recommendations
-- [ ] **Temporal modeling** — time series on dinner history; recency
-  weighting; day-of-week and seasonal effects
-- [ ] **Collaborative signals** — if multi-user data exists, implicit
-  feedback modeling
-- [ ] **Recommendation tool** — new MCP tool: `recommend_recipes`;
-  takes context (time of day, recent history, pantry) and returns ranked
+- [ ] **Exploratory analysis** — temporal patterns in 365+ day dinner history
+- [ ] **Content-based filtering** — recipe similarity via embeddings
+- [ ] **Bayesian preference model** — uncertainty-aware recommendations
+- [ ] **Temporal modeling** — recency weighting; day-of-week and seasonal
+  effects; time series on dinner history
+- [ ] **Collaborative signals** — implicit feedback modeling if multi-user
+- [ ] **`recommend_recipes` tool** — new MCP tool; context-aware ranked
   suggestions with reasoning
-- [ ] **MLOps foundations** — model versioning (MLflow or simple
-  versioned artifacts); reproducible training pipeline; basic drift
-  detection
+- [ ] **MLOps foundations** — model versioning, reproducible pipeline,
+  basic drift detection
 - [ ] **Analytics dashboard** — temporal trends, preference drift,
-  nutritional patterns; BI-style presentation; business-value framing
+  nutritional patterns; BI-style; business-value framing
 
 ### Architecture decision points
 - Model serving — in-process vs. separate inference service
-- Retraining trigger — on new dinner data vs. scheduled vs. on-demand
+- Retraining trigger — on new data vs. scheduled vs. on-demand
 - Dashboard framework — Streamlit, Grafana, Evidence, or Observable
 
 ---
 
 ## Stage 6 — Cloud, App & MLOps (Infrastructure Wraps ML)
 
+**Target tag: `v1.0.0`**
 **Goal:** Package the ML system into a production-grade, publicly
-accessible application. Infrastructure now wraps something genuinely
-impressive rather than being a prerequisite for it.
+accessible application. Infrastructure wraps something genuinely impressive.
 **Portfolio signal:** Full end-to-end production system — engineering
 depth + ML depth + ops awareness. Lead DS / AI engineer portfolio piece.
 
@@ -281,6 +302,7 @@ depth + ML depth + ops awareness. Lead DS / AI engineer portfolio piece.
   new secret is added
 - **Relevance density** — every design decision asks: is this earning
   its place in the system?
+- **Version tags** — tag each stage completion; run git-cliff after tagging
 
 ---
 
