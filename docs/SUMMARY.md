@@ -36,7 +36,7 @@ implementation velocity, commit message *why* (not just *what*).
 
 ### 2026-05-15 — Project Initialization & MCP Foundations
 
-**Commits:** `7626b3a` → `f75e887` (full history as of this writing)
+**Commits:** `7626b3a` → `f75e887`
 
 #### What was built
 - Project scaffolded with `uv`, Python 3.13, FastMCP
@@ -113,66 +113,72 @@ implementation velocity, commit message *why* (not just *what*).
 **Commits:** `20c5c56` → `22b1657`
 
 #### What was built
-- `docs/` folder created with three human-facing planning documents:
-  - `DEV_PLAN.md` — sequenced 6-stage feature roadmap with guiding principles
-    and portfolio narrative
-  - `LEARNING_PLAN.md` — learning goals anchored to each project stage
-  - `SUMMARY.md` — this file; chronological development and learning log
-- `CLAUDE.md` Planning section updated: distinguishes `project_development_plan.md`
-  (Claude Code's operational memory) from `docs/` (human-facing artifacts);
-  adds guard against modifying `docs/` without explicit instruction
+- `docs/` folder created with three human-facing planning documents
+- `CLAUDE.md` Planning section updated with ownership boundary
 - PostToolUse hook bug identified and fixed
 
 #### Concepts learned
-- **Shell glob matching in hook `if` conditions** — `*` matches any sequence
-  including spaces; leading `*` is required to match a non-prefix substring
-- **Hook silent failure mode** — a mismatched `if` condition produces no
-  error; the hook simply doesn't fire, making the bug invisible until noticed
-  by the absence of expected output
+- **Shell glob matching in hook `if` conditions** — `*` matches any sequence;
+  leading `*` required to match a non-prefix substring
+- **Hook silent failure mode** — mismatched `if` condition produces no error;
+  invisible until noticed by absence of expected output
 
 #### Design decisions made
 - `docs/` is human-facing and write-protected from Claude Code unless
-  explicitly asked — keeps the operational memory (`project_development_plan.md`)
-  separate from the narrative/learning artifacts
+  explicitly asked
 
 ### 2026-05-16 — README, License, AI Workflow, Tool Design Philosophy & Roadmap Restructure
 
-**Commits:** `8b58109` → current
+**Commits:** `8b58109` → `8c6c390`
 
 #### What was built
 - MIT license added (`LICENSE`)
-- README updated: features, roadmap, Quick Start section
+- README: Features, Quick Start, Architecture sections added/updated
 - CI gap closed: ruff lint + format checks added to `ci.yml`
+- README staleness check: pre-commit hook (`scripts/check_readme_staleness.sh`)
+  warns when `server.py` is modified without `README.md`; non-blocking (exit 0)
 - `docs/DEV_PLAN.md` restructured: stage order revised to prioritize ML
-  before infrastructure (Stage 2.5 added, Stage 4 is now semantic search,
-  Stage 5 is recommender, Stage 6 is cloud/app/MLOps)
+  before infrastructure (Stage 2.5 added, Stage 4 = semantic search,
+  Stage 5 = recommender, Stage 6 = cloud/app/MLOps)
 - `~/.claude/memory/user_background.md` updated: career context, target
-  roles (DS + AI engineer + analytics engineer), software engineering
-  growth areas, building-in-the-open intent
-- Doc update process formalized (see below)
+  roles, growth areas, building-in-the-open intent
+- `~/.claude/CLAUDE.md` updated: added instruction to not re-show diff
+  after user confirms — prevents hesitation loop in Claude Code
+- Doc update process formalized in `SUMMARY.md`
+- Six-file documentation system fully synchronized
 
 #### Concepts learned
 - **MIT license** — most permissive open source license; absence signals
   inexperience; required before public promotion
 - **Quick Start design** — prerequisites → install → configure → run →
   connect; zero to working in under 5 minutes with no guessing
+- **Architecture vs. systems thinking** — "did you think about tomorrow
+  while building today?"; intentionality about change, not just efficiency;
+  architectural restraint (what you leave out) is as important as decisions made
 - **Division of labor between AI tools** — project chat holds learning arc
   and continuity; Claude Code holds execution context; execute where the
-  context lives
+  context lives; copy-paste handoffs introduce errors
 - **Tool design philosophy for LLMs** — four reasons tools beat LLM
   reasoning for retrieval: context scarcity, determinism, composability,
   latency/cost at scale
 - **The shifting tool/LLM boundary** — not fixed; reassess periodically;
   current rule: tools for deterministic lookup, external state, computation,
   or data too large for context
-- **Relevance density** — context quality = signal-to-token ratio, not
-  raw size; optimizing for relevance density is a recurring design concern
-- **Context sizing intuition** — not a fixed threshold; depends on relevance
-  density, continuity needs, model limits; calibrate iteratively
+- **Relevance density** — context quality = signal-to-token ratio, not raw
+  size; optimizing for relevance density is a recurring design concern
+- **Context sizing intuition** — not a fixed threshold; calibrate iteratively
 - **Edge cases: reasoning as a tool** — chain-of-thought as structured
-  scratchpad; reasoning/synthesis are not categorically exempt from tools
-- **ML before infrastructure** — for DS/AI engineer portfolio, the ML
-  system is the differentiator; infrastructure wraps it, not the reverse
+  scratchpad; reasoning/synthesis not categorically exempt from tools
+- **ML before infrastructure** — for DS/AI engineer portfolio, ML is the
+  differentiator; infrastructure wraps it, not the reverse
+- **`/context` vs `/clear` in Claude Code** — `/context` shows token usage
+  breakdown by category (useful diagnostic); `/clear` resets conversation
+  context; restarting Claude Code alone does not clear context fully
+- **Pre-commit hook design** — `exit 0` makes a hook advisory (warns but
+  never blocks); `--cached` checks staged files only, not working tree;
+  `always_run: true` fires regardless of which files changed
+- **Claude Code hesitation loop** — re-showing diffs after confirmation is
+  a context/instruction conflict; solved by explicit global `CLAUDE.md` rule
 
 #### Design decisions made
 - Roadmap reordered: Stage 2 compressed, Stage 2.5 (local DB) added,
@@ -180,18 +186,19 @@ implementation velocity, commit message *why* (not just *what*).
 - Portfolio narrative rewritten to target DS, AI engineer, analytics
   engineer roles explicitly
 - Doc update process formalized as a named, repeatable workflow
+- README staleness check implemented as advisory pre-commit (Option A)
+  rather than blocking CI (Option B) — solo project, discipline sufficient
 
 ---
 
 ## Open Items & Reminders
 
-### TODO (immediate)
-- [ ] README: Architecture section
-- [ ] README: Demo section (after Stage 1 feature set complete)
-- [ ] Add README staleness check to pre-commit or CI
-- [ ] Add `git-cliff` for automated CHANGELOG generation
+### TODO (immediate — Stage 1 remaining)
+- [ ] `git-cliff` / CHANGELOG — automated changelog from conventional commits
 - [ ] Tool input validation — FastMCP/Pydantic behavior
 - [ ] `sync_recipes` tool — incremental + full refresh modes
+- [ ] `search_recipes` expansion — discuss scope before implementing
+- [ ] README: Demo section — defer until full Stage 1 feature set complete
 
 ### Recurring check-ins (every 2-3 sessions)
 - [ ] Where does the tool/LLM boundary sit today? Has it shifted?
@@ -199,6 +206,7 @@ implementation velocity, commit message *why* (not just *what*).
 - [ ] Edge cases: are any reasoning/synthesis tasks candidates for tools?
 - [ ] Progress recalibration — honest assessment vs. typical developer output
 - [ ] Scope discipline — are future-stage ideas staying flagged, not built?
+- [ ] Architecture check-in — how has overall paprika-agent architecture evolved?
 
 ### Deferred ideas (flagged, not forgotten)
 - Local SQLite persistent cache — Stage 2.5

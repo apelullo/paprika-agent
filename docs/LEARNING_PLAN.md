@@ -40,6 +40,8 @@ answers and must be recalibrated as the project and AI landscape evolve:
 - **Progress recalibration** — honest assessment of what's been built vs.
   what a typical developer would have at this point; correct for
   underestimation bias
+- **Architecture check-in** — how has the overall paprika-agent architecture
+  evolved? Is the "extend naturally, not replace" principle holding?
 
 ---
 
@@ -56,8 +58,8 @@ lifecycle before adding network complexity.
 - [x] Lazy initialization pattern
 - [x] Conventional commits and commit hygiene
 - [x] pytest: unit tests, monkeypatching, async mocking with pytest-httpx
-- [x] Pre-commit hooks (ruff lint + format)
-- [x] GitHub Actions CI pipeline
+- [x] Pre-commit hooks (ruff lint + format + advisory staleness check)
+- [x] GitHub Actions CI pipeline (ruff + pytest gates)
 - [x] Race condition awareness (CI polling solution)
 - [x] Tool design philosophy — why tools beat LLM reasoning for retrieval
       (context scarcity, determinism, composability, latency/cost)
@@ -67,6 +69,13 @@ lifecycle before adding network complexity.
       raw size; a foundational concept for all future context design
 - [x] Function composition via structured tool output vs. probabilistic
       reasoning output
+- [x] Architecture thinking — "did you think about tomorrow while building
+      today?"; intentionality about change; restraint is as important as
+      decisions made
+- [x] README design — Quick Start, Architecture, staleness discipline
+- [x] MIT license — open source norms; public repo requirements
+- [x] AI tool division of labor — project chat vs. Claude Code; when to
+      use `/context` vs. `/clear`; context bloat diagnosis
 
 ### Remaining (before Stage 2)
 - [ ] **Tool input validation** — what happens when the LLM passes bad
@@ -132,78 +141,69 @@ contract from both sides.
 
 ---
 
-## Stage 4 — Cloud Deployment
+## Stage 4 — Semantic Search & Embeddings
 
-**Goal:** Deploy a real service to AWS; understand infrastructure, networking,
-and ops basics at the level a senior data scientist should know.
+**Goal:** Implement embedding-based semantic search — highest-value,
+lowest-infrastructure ML feature. Runs entirely locally.
 
 ### Concepts to learn
-- [ ] **AWS fundamentals** — EC2, IAM, security groups, VPC basics; free
-  tier constraints and gotchas
-- [ ] **Linux server administration** — SSH, file permissions, process
-  management, log inspection
-- [ ] **DNS and Route 53** — A records, TTL, dynamic IP problem; Art's
-  EC2 manager + Route 53 updater idea (excellent, revisit here)
-- [ ] **Reverse proxy** — nginx or Caddy in front of the MCP server;
-  TLS termination; why you don't expose app servers directly
-- [ ] **Secrets management** — AWS Secrets Manager vs. SSM Parameter Store
-  vs. `.env`; never hardcode credentials
-- [ ] **Docker basics** — containerizing the server; why containers matter
-  for reproducibility; `Dockerfile` anatomy
-- [ ] **Deployment pipeline** — GitHub Actions → build → push → deploy;
-  CD as an extension of the CI you already have
+- [ ] **Sentence transformers** — embedding recipes into dense vectors;
+  model selection tradeoffs; local inference speed vs. quality
+- [ ] **Vector search** — FAISS locally; pgvector when Postgres arrives;
+  same interface, swappable backend
+- [ ] **Hybrid search** — combining deterministic substring with semantic
+  search; configurable blend; when each wins
+- [ ] **Embedding storage** — persisting vectors in SQLite; recompute
+  strategy on recipe changes
+- [ ] **Evaluation** — how do you know search is good? Relevance metrics,
+  spot-checks, test cases with known results
+- [ ] **Tool/LLM boundary reassessment** — with semantic search in place,
+  which tool behaviors can move to native LLM reasoning?
+- [ ] **Context sizing check-in #2** — with embedding results in context,
+  is relevance density intuition matching observed behavior?
 
 ---
 
-## Stage 5 — Standalone App
+## Stage 5 — Recipe Recommender & Bayesian Inference
 
-**Goal:** Build a complete, self-contained product. Understand frontend/backend
-separation, UX design basics, and what "production-ready" really means.
+**Goal:** Build a personalized recommender using dinner history and
+embedding infrastructure. Primary ML showcase.
 
 ### Concepts to learn
-- [ ] **API design** — REST vs. other patterns; versioning; error contracts
-- [ ] **Database design** — schema design for recipe data; SQLite → Postgres
-  migration path; when to use an ORM vs. raw SQL
-- [ ] **dbt basics** — transformation layer on top of the DB; why it matters
-  for analytics; connects to Art's data science background naturally
-- [ ] **Frontend basics** — enough HTML/CSS/JS or a Python UI framework
-  (Streamlit, Gradio, or FastHTML) to build an interface
-- [ ] **Observability** — structured logging, metrics, health endpoints;
-  knowing what your app is doing in production
+- [ ] **Exploratory analysis** — temporal patterns in 365+ day dinner
+  history; preference drift, frequency, seasonal trends
+- [ ] **Content-based filtering** — recipe similarity via embeddings
+- [ ] **Bayesian preference model** — prior over preferences updated with
+  each dinner; uncertainty-aware recommendations
+- [ ] **Temporal modeling** — recency weighting; day-of-week and seasonal
+  effects; time series on dinner history
+- [ ] **MLOps foundations** — model versioning, reproducible training
+  pipeline, basic drift detection
 - [ ] **Tool/LLM boundary check-in #2** — with a full app in place, which
-  current tools are candidates for native LLM reasoning? Which LLM steps
-  are candidates for tools?
+  current tools are candidates for native LLM reasoning?
 - [ ] **Reasoning as a tool** — chain-of-thought as an inspectable,
   composable step; when structured scratchpads beat implicit reasoning
 
 ---
 
-## Stage 6 — AI/ML Features
+## Stage 6 — Cloud, App & MLOps
 
-**Goal:** Apply Art's data science depth to production ML systems. This is
-where the data science background becomes a force multiplier.
+**Goal:** Package the ML system into a production-grade application.
+Infrastructure wraps the ML — not the other way around.
 
 ### Concepts to learn
-- [ ] **Embeddings and vector search** — sentence transformers, FAISS or
-  pgvector; semantic search over recipes; `search_recipes` evolution from
-  substring to semantic (same architecture, smarter implementation)
-- [ ] **Knowledge graphs** — recipe → ingredient → technique relationships;
-  graph traversal for recommendation
-- [ ] **Recommendation systems** — collaborative filtering, content-based,
-  hybrid; Bayesian inference on 365+ day dinner history; temporal trend
-  modeling
-- [ ] **MLOps** — model versioning, serving, monitoring, drift detection;
-  connecting to the observability foundation from Stage 5
-- [ ] **Fine-tuning and RAG** — when to fine-tune vs. retrieve; building
-  a RAG pipeline over recipe data
-- [ ] **Continuous learning** — updating models as new dinner data arrives;
-  temporal trends in the 365+ day dataset
+- [ ] **AWS fundamentals** — EC2, IAM, security groups, VPC, free tier
+- [ ] **Docker** — containerization, reproducibility, `Dockerfile` anatomy
+- [ ] **DNS and Route 53** — A records, TTL, dynamic IP; EC2 manager pattern
+- [ ] **Reverse proxy** — nginx or Caddy; TLS termination
+- [ ] **Secrets management** — AWS Secrets Manager vs. SSM vs. `.env`
+- [ ] **CD pipeline** — GitHub Actions → build → push → deploy
+- [ ] **Observability** — structured logging, metrics, health endpoints,
+  dashboards; production metrics + ML metrics unified
 - [ ] **Tool/LLM boundary check-in #3** — at this stage, LLM reasoning
-  *is* the tool in many cases (semantic search, RAG); how has the boundary
-  shifted from Stage 1? What's the final mental model?
-- [ ] **Context sizing check-in (final)** — with embeddings, RAG, and rich
-  recipe data in play, is context design being made deliberately and
-  accurately? Has intuition been demonstrated to be calibrated?
+  *is* the tool in many cases; how has the boundary shifted from Stage 1?
+- [ ] **Context sizing check-in (final)** — is context design being made
+  deliberately and accurately? Has intuition been demonstrated calibrated?
 
 ---
 
