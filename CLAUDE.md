@@ -28,6 +28,21 @@ require no credentials or network access.
 GitHub Actions runs the test suite on every push and PR to `master`
 (`.github/workflows/ci.yml`). Check the Actions tab for results.
 
+## CI Notes
+
+**Known bug:** PostToolUse Bash matcher hooks do not fire in Claude Code
+v2.1.123+ (GitHub issue #55889, open as of 2026-05-18). After each
+`git push`, manually poll CI:
+
+```bash
+gh run list --commit <SHA> --repo apelullo/paprika-agent
+```
+
+The hook in `.claude/settings.json` is already configured correctly
+(SHA-based lookup, `hookSpecificOutput` format) and will fire
+automatically once #55889 is fixed. Check the issue at the start of
+each session.
+
 ## Changelog
 
 Run `uv run git-cliff --unreleased --output CHANGELOG.md` to regenerate
