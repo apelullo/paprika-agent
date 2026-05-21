@@ -17,3 +17,6 @@ wheels/
 
 # Unused scaffold
 main.py
+
+# Ephemeral session handoff — never committed
+docs/session_update.md
