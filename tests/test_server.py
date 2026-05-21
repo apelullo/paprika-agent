@@ -124,6 +124,20 @@ def test_get_recipe_empty_name(monkeypatch):
         asyncio.run(get_recipe(""))
 
 
+def test_get_recipe_name_too_long(monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._populate_cache", _noop)
+    with pytest.raises(ValueError, match="exceeds"):
+        asyncio.run(get_recipe("a" * 201))
+
+
+def test_search_recipes_query_too_long(monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._populate_cache", _noop)
+    with pytest.raises(ValueError, match="exceeds"):
+        asyncio.run(search_recipes("a" * 201))
+
+
 def test_search_recipes_empty_query(monkeypatch):
     monkeypatch.setattr("server._recipe_cache", {})
     monkeypatch.setattr("server._populate_cache", _noop)
