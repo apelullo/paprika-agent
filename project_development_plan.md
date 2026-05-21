@@ -1,6 +1,6 @@
 # Project Development Plan
 
-## Current state (as of 2026-05-20)
+## Current state (as of 2026-05-21)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest) + git-cliff
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`
