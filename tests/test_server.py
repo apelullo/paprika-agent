@@ -8,6 +8,7 @@ from server import (
     PAPRIKA_API,
     _normalize,
     _populate_cache,
+    _validate_input_string,
     fetch_recipe,
     get_recipe,
     list_recipes,
@@ -115,6 +116,11 @@ def test_search_recipes_no_match(monkeypatch):
     monkeypatch.setattr("server._populate_cache", _noop)
     result = asyncio.run(search_recipes("pasta"))
     assert "No recipes found" in result
+
+
+def test_validate_input_string_whitespace_only():
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        _validate_input_string("   ", "name", "test_tool")
 
 
 def test_get_recipe_empty_name(monkeypatch):
