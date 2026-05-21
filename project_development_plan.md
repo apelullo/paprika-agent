@@ -20,7 +20,7 @@
 - `git-cliff` / CHANGELOG — automated changelog from conventional commits
 - Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 6)
 - README: Features, Quick Start, Architecture, Tech Stack, Roadmap sections
-- Tool input validation — `_validate_query_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
+- Tool input validation — `_validate_input_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
 
 ## Next actions (Stage 1 remaining — before `v0.1.0`)
 - `sync_recipes` tool — incremental (ID set diff) + full refresh
