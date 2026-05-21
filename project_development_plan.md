@@ -37,6 +37,10 @@
 5. **Recipe Recommender** — Bayesian preference model on 365+ day dinner history, temporal modeling, `recommend_recipes` tool, analytics dashboard
 6. **Cloud, App & MLOps** — AWS/EC2, Docker, CD pipeline, Postgres migration, pgvector, full frontend, full CLI, observability
 
+## Deferred tests
+- `get_token` bad response format — test the `raise ValueError(f"Unexpected login response: {body}")` branch
+- `fetch_recipe` non-404 HTTP error — test that `response.raise_for_status()` propagates on e.g. 500
+
 ## Tooling roadmap
 - **mypy or Pyright** — trigger: second source file added, or functions start calling each other
 - **sentence-transformers + FAISS** — trigger: Stage 4 begins
