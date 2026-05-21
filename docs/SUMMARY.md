@@ -343,6 +343,13 @@ Three things in sequence — wait for confirmation before each:
    say so explicitly. Show diff before committing if changes exist.
 ```
 
+**Step 4 — Regenerate docs/HANDOFF.md**
+Regenerate docs/HANDOFF.md from the current state of
+project_development_plan.md, docs/SUMMARY.md, docs/LEARNING_PLAN.md,
+and docs/DEV_PLAN.md. Follow the existing structure. Update the
+'Where to pick up' section to reflect the current next action from
+project_development_plan.md.
+
 ### What this is NOT
 - Not a replacement for real-time notes mid-session — capture decisions
   as they happen, don't reconstruct at the end
