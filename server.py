@@ -52,7 +52,7 @@ def _normalize(name: str) -> str:
     return name.lower().replace("’", "'").replace("‘", "'")
 
 
-def _validate_query_string(value: str, param: str, tool: str) -> None:
+def _validate_input_string(value: str, param: str, tool: str) -> None:
     """Raise ValueError with a helpful message if a string param is unusable."""
     if not value or not value.strip():
         raise ValueError(f"[{tool}] ‘{param}’ must be a non-empty string.")
@@ -99,7 +99,7 @@ async def get_recipe(name: str) -> dict | str:
     """Return full details for a recipe by name (case-insensitive, exact match).
     Returns a not-found message if no recipe with that name exists."""
     await _populate_cache()
-    _validate_query_string(name, "name", "get_recipe")
+    _validate_input_string(name, "name", "get_recipe")
     uid = _name_index.get(_normalize(name))
     if uid is None:
         return f"No recipe found with name '{name}'."
@@ -111,7 +111,7 @@ async def search_recipes(query: str) -> list[str] | str:
     """Search recipes by keyword. Returns all recipe names where every query
     token appears in the name (case-insensitive, order-independent)."""
     await _populate_cache()
-    _validate_query_string(query, "query", "search_recipes")
+    _validate_input_string(query, "query", "search_recipes")
     tokens = _normalize(query).split()
     matches = [
         r["name"]
