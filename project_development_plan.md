@@ -1,11 +1,11 @@
 # Project Development Plan
 
-## Current state (as of 2026-05-19)
+## Current state (as of 2026-05-20)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest) + git-cliff
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`
 **Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`), bearer token auth from `.env`
-**Stage:** 1 — MCP Tool Suite (~95% complete) — target tag: `v0.1.0`
+**Stage:** 1 — MCP Tool Suite (~97% complete) — target tag: `v0.1.0`
 
 ## Completed milestones
 - README: Architecture section
@@ -20,9 +20,9 @@
 - `git-cliff` / CHANGELOG — automated changelog from conventional commits
 - Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 6)
 - README: Features, Quick Start, Architecture, Tech Stack, Roadmap sections
+- Tool input validation — `_validate_query_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
 
 ## Next actions (Stage 1 remaining — before `v0.1.0`)
-- Tool input validation — FastMCP/Pydantic; clear error messages
 - `sync_recipes` tool — incremental (ID set diff) + full refresh
 - `search_recipes` expansion — ingredients, source, prep instructions (discuss scope first)
 - README: Demo section — defer until above tools complete, one recording captures everything
