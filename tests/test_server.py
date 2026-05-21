@@ -120,8 +120,8 @@ def test_search_recipes_no_match(monkeypatch):
 def test_search_recipes_empty_query(monkeypatch):
     monkeypatch.setattr("server._recipe_cache", {})
     monkeypatch.setattr("server._populate_cache", _noop)
-    result = asyncio.run(search_recipes(""))
-    assert "provide a search query" in result
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        asyncio.run(search_recipes(""))
 
 
 @pytest.mark.anyio

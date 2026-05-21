@@ -11,6 +11,8 @@ mcp = FastMCP("Paprika")
 
 PAPRIKA_API = "https://www.paprikaapp.com/api/v2"
 
+MAX_QUERY_LENGTH = 200
+
 _recipe_cache: dict[str, dict] = {}  # uid → full recipe data
 _name_index: dict[str, str] = {}  # lowercase name → uid
 
@@ -48,6 +50,14 @@ async def fetch_recipe(
 def _normalize(name: str) -> str:
     """Lowercase and normalize curly apostrophes to straight for consistent matching."""
     return name.lower().replace("’", "'").replace("‘", "'")
+
+
+def _validate_query_string(value: str, param: str, tool: str) -> None:
+    """Raise ValueError with a helpful message if a string param is unusable."""
+    if not value or not value.strip():
+        raise ValueError(f"[{tool}] ‘{param}’ must be a non-empty string.")
+    if len(value.strip()) > MAX_QUERY_LENGTH:
+        raise ValueError(f"[{tool}] ‘{param}’ exceeds {MAX_QUERY_LENGTH} characters.")
 
 
 async def _populate_cache() -> None:
@@ -89,6 +99,7 @@ async def get_recipe(name: str) -> dict | str:
     """Return full details for a recipe by name (case-insensitive, exact match).
     Returns a not-found message if no recipe with that name exists."""
     await _populate_cache()
+    _validate_query_string(name, "name", "get_recipe")
     uid = _name_index.get(_normalize(name))
     if uid is None:
         return f"No recipe found with name '{name}'."
@@ -100,9 +111,8 @@ async def search_recipes(query: str) -> list[str] | str:
     """Search recipes by keyword. Returns all recipe names where every query
     token appears in the name (case-insensitive, order-independent)."""
     await _populate_cache()
+    _validate_query_string(query, "query", "search_recipes")
     tokens = _normalize(query).split()
-    if not tokens:
-        return "Please provide a search query."
     matches = [
         r["name"]
         for r in _recipe_cache.values()
