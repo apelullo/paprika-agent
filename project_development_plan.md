@@ -23,7 +23,7 @@
 - Tool input validation — `_validate_input_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
 
 ## Next actions (Stage 1 remaining — before `v0.1.0`)
-- `sync_recipes` tool — incremental (ID set diff) + full refresh
+- `sync_recipes` tool — single-account; incremental (ID set diff) + full refresh fallback
 - `search_recipes` expansion — ingredients, source, prep instructions (discuss scope first)
 - README: Demo section — defer until above tools complete, one recording captures everything
 - Tag `v0.1.0` and run release workflow when above are done
@@ -31,11 +31,14 @@
 ## Stage roadmap
 1. **MCP Tool Suite** — current; see next actions above
 2. **Local Network Deployment** (compressed) — bind to LAN IP, connect Claude Desktop remotely; minimal ops
-2.5. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag
+2.5. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag; `merge_recipes` tool — two-account merge (e.g. personal + spouse's account) with conflict resolution strategies: keep both, last-write-wins via timestamp, or manual override
 3. **Custom Client** (compressed) — minimal Python script connecting to Stage 2 server; understand protocol from both sides
 4. **Semantic Search & Embeddings** — sentence-transformers, FAISS, hybrid search, embedding storage in Stage 2.5 DB
 5. **Recipe Recommender** — Bayesian preference model on 365+ day dinner history, temporal modeling, `recommend_recipes` tool, analytics dashboard
 6. **Cloud, App & MLOps** — AWS/EC2, Docker, CD pipeline, Postgres migration, pgvector, full frontend, full CLI, observability
+
+## Future ideas (no stage assigned)
+- **Account similarity metric** — aggregate a distance/similarity score across two Paprika accounts (ingredient overlap, cuisine distribution, semantic similarity of recipe content); natural input to Stage 5 recommender for cross-account suggestions (e.g. "recipes your wife has that you'd probably enjoy")
 
 ## Deferred tests
 - `get_token` bad response format — test the `raise ValueError(f"Unexpected login response: {body}")` branch
