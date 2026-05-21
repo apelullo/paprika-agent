@@ -63,7 +63,7 @@ New tools that read recipe data should call `await _populate_cache()` first and 
 
 ### Adding a new tool
 
-Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`.
+Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`. Tools that accept string parameters should call `_validate_input_string(value, param, tool)` immediately after `_populate_cache()` — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`).
 
 ## Planning
 
