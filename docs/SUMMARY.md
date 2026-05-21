@@ -189,6 +189,77 @@ implementation velocity, commit message *why* (not just *what*).
 - README staleness check implemented as advisory pre-commit (Option A)
   rather than blocking CI (Option B) — solo project, discipline sufficient
 
+### 2026-05-21 — Input Validation, Test Philosophy & Doc Update Process Redesign
+
+**Commits:** `60f4650` → `16267fc`
+
+#### What was built
+- `MAX_QUERY_LENGTH = 200` module-level constant added after `PAPRIKA_API`
+- `_validate_input_string(value, param, tool) -> None` helper added after
+  `_normalize()` — raises `ValueError` with `[tool] 'param' must be a
+  non-empty string.` or `[tool] 'param' exceeds 200 characters.`
+- Called in `get_recipe` (param="name") and `search_recipes` (param="query")
+  as first line after `_populate_cache()`
+- Redundant `if not tokens: return "Please provide a search query."`
+  guard removed from `search_recipes` — now covered by validation
+- Function renamed during session: `_validate_query_string` →
+  `_validate_input_string` ("query" implied search-specific; function is
+  general-purpose)
+- Unicode curly apostrophe characters in `_normalize` were accidentally
+  corrupted during editing — caught via git diff, diagnosed by comparing
+  hex code points, restored from HEAD
+- Test suite grew from 15 → 20 tests:
+  - `test_search_recipes_empty_query` updated to expect `ValueError`
+    instead of string return (contract change)
+  - `test_get_recipe_empty_name` — empty string raises `ValueError`
+  - `test_get_recipe_name_too_long` — name > 200 chars raises `ValueError`
+  - `test_search_recipes_query_too_long` — query > 200 chars raises `ValueError`
+  - `test_populate_cache_already_warm` — verifies no HTTP calls on warm cache
+  - `test_validate_input_string_whitespace_only` — unit test for helper
+    directly; `_validate_input_string` imported explicitly
+- Doc update process redesigned: Step 0 added (`session_update.md` handoff
+  from Claude Code to this chat); `HANDOFF.md` ownership moved to this
+  chat and integrated into Step 1; Step 3 revised to close feedback loop
+
+#### Concepts learned
+- **FastMCP/Pydantic input validation** — FastMCP uses Pydantic v2 to
+  validate tool inputs from type annotations before the function body runs;
+  type coercion handles wrong types (e.g. `123` → `"123"`); semantic
+  errors (empty string, oversized input) require manual guards
+- **Unit vs. integration tests** — unit tests verify logic of a single
+  function; integration tests verify wiring (that the function is called
+  from the right place); distinct concerns, not redundant coverage
+- **DRY in tests** — test the helper's logic once directly; test each
+  caller once for wiring; avoid re-testing logic through every caller
+- **Constants vs. config files** — module-level constant is correct when
+  the value is environment-invariant; promote to config/env var only when
+  it needs to differ across environments or be user-configurable
+- **`ValueError` in FastMCP** — caught by FastMCP and surfaced as a
+  structured error message to the LLM, not a raw traceback; LLM sees
+  something actionable and can self-correct
+- **Validation order tradeoff** — validation after `_populate_cache()`
+  means a cold cache is warmed before bad input is rejected; functionally
+  fine (cache is warm for all subsequent calls); could be before for
+  maximum efficiency, but not worth changing at this scale
+
+#### Design decisions made
+- `_validate_input_string` chosen over `_validate_query_string` — more
+  honest about scope; function validates any string param, not just queries
+- `MAX_QUERY_LENGTH = 200` as module-level constant — fixed ceiling for
+  abuse protection, not a semantic boundary; dynamic calculation
+  (e.g. `longest_name * 2`) rejected: creates moving validation boundary,
+  surprising behavior if recipes are deleted
+- `sync_recipes` scoped to single-account — incremental ID set diff +
+  full refresh as escape hatch; named distinctly from future `merge_recipes`
+- `merge_recipes` placed in Stage 2.5 — two-account merge requires
+  persistent DB to make conflict resolution tractable; conflict strategies:
+  keep both, last-write-wins via timestamp, manual override
+- Account similarity metric flagged as future idea (no stage assigned) —
+  aggregate distance across two recipe collections; natural Stage 5 input
+- Doc update process redesigned: Step 0 (`session_update.md`) is the
+  key — enables full context cascade from Claude Code → this chat → Claude
+  Code; `HANDOFF.md` owned by this chat, not Claude Code
+
 ### 2026-05-19 — git-cliff, Version Tags & Changelog Workflow
 
 **Commits:** `53d8755` → current
@@ -245,8 +316,8 @@ implementation velocity, commit message *why* (not just *what*).
 ## Open Items & Reminders
 
 ### TODO (immediate — Stage 1 remaining before `v0.1.0`)
-- [ ] Tool input validation — FastMCP/Pydantic behavior
-- [ ] `sync_recipes` tool — incremental + full refresh modes
+- [x] Tool input validation — FastMCP/Pydantic behavior
+- [ ] `sync_recipes` tool — single-account; incremental (ID set diff) + full refresh fallback
 - [ ] `search_recipes` expansion — discuss scope before implementing
 - [ ] README: Demo section — defer until remaining tools complete
 - [ ] **Tag `v0.1.0` and run release workflow** when above are done
@@ -302,26 +373,47 @@ git push
 - A new tool, pattern, or workflow is adopted
 - Any memory file becomes stale relative to current reality
 
-### Document ownership map
+### Document ownership
 
-| File | Owner | Update when |
-|---|---|---|
-| `docs/SUMMARY.md` | This project chat | New concepts, design decisions, session ends |
-| `docs/LEARNING_PLAN.md` | This project chat | Stage completed, concept added, check-ins evolve |
-| `docs/DEV_PLAN.md` | This project chat | Roadmap changes, milestone completed |
-| `project_development_plan.md` | Claude Code | Any DEV_PLAN change; lean, current state + next actions |
-| `CLAUDE.md` (project) | Claude Code | Architecture changes, new conventions |
-| `~/.claude/CLAUDE.md` (global) | Manual | Global preferences change |
-| `~/.claude/memory/user_background.md` | This project chat | Career goals, background, style evolves |
-| `~/.claude/memory/feedback_recaps.md` | This project chat | Recap preferences change |
-| `~/.claude/memory/MEMORY.md` | Claude Code (auto) | Do not edit manually |
+| File | Owner |
+|---|---|
+| `docs/SUMMARY.md` | This chat |
+| `docs/LEARNING_PLAN.md` | This chat |
+| `docs/DEV_PLAN.md` | This chat |
+| `docs/HANDOFF.md` | This chat |
+| `project_development_plan.md` | Claude Code |
+| `CLAUDE.md` (project) | Claude Code |
+| `~/.claude/CLAUDE.md` (global) | Manual |
+| `~/.claude/memory/user_background.md` | This chat |
+| `~/.claude/memory/feedback_recaps.md` | This chat |
+| `~/.claude/memory/MEMORY.md` | Claude Code (auto) — do not edit manually |
 
 ### Step-by-step
 
-**Step 1 — This chat updates `docs/` files directly via filesystem connector**
+**Step 0 — Claude Code generates `docs/session_update.md`**
+
+Run this in Claude Code before starting the doc update:
+```
+Generate docs/session_update.md with two sections:
+1. Git log: output of `git log --oneline -50`
+2. Session notes: anything we did or decided that the project chat
+   wouldn't know from its own conversation — implementation changes,
+   files touched, decisions made.
+Do not commit this file.
+```
+
+This chat then reads `session_update.md` and `project_development_plan.md`
+to gain full context before updating any docs. This is the context handoff
+from Claude Code to this chat — without it, docs updates reflect only
+what was discussed here, not what was actually built.
+
+**Step 1 — This chat updates `docs/` files**
 - `SUMMARY.md` — session entry: built, learned, decided; update TODOs
 - `LEARNING_PLAN.md` — check off completed; add concepts to right stage
-- `DEV_PLAN.md` — mark completed; update order/scope; update narrative
+- `DEV_PLAN.md` — mark completed; update order/scope if changed
+- `HANDOFF.md` — regenerate from current state of all four docs; update
+  "Where to pick up" to reflect current next action from
+  `project_development_plan.md`
 
 **Step 2 — This chat updates global memory files if needed**
 - `user_background.md` — career context, roles, growth areas, style
@@ -331,24 +423,24 @@ git push
 ```
 Three things in sequence — wait for confirmation before each:
 
-1. docs/ files were updated externally. Run git status, show the diff
-   across all changed files, propose a commit message. Do not commit yet.
+1. Read docs/SUMMARY.md, LEARNING_PLAN.md, DEV_PLAN.md, and HANDOFF.md.
+   Then run git status and show the diff across all changed docs/ files.
+   Propose a commit message. Do not commit yet.
 
-2. After that commit: update project_development_plan.md to reflect any
-   stage order, milestone, or next-action changes. Lean — no narrative.
+2. After that commit: review project_development_plan.md against the
+   updated docs/ files. Update as needed to reflect anything from this
+   chat's session that Claude Code wasn't aware of. Lean — no narrative.
    Show diff before committing.
 
-3. After that commit: check CLAUDE.md (project-level) for needed updates
-   based on architecture or workflow changes this session. If none needed,
-   say so explicitly. Show diff before committing if changes exist.
+3. After that commit: check CLAUDE.md for needed updates based on
+   architecture or workflow changes this session. If none needed, say so
+   explicitly. Show diff before committing if changes exist.
+
+Then delete docs/session_update.md.
 ```
 
-**Step 4 — Regenerate docs/HANDOFF.md**
-Regenerate docs/HANDOFF.md from the current state of
-project_development_plan.md, docs/SUMMARY.md, docs/LEARNING_PLAN.md,
-and docs/DEV_PLAN.md. Follow the existing structure. Update the
-'Where to pick up' section to reflect the current next action from
-project_development_plan.md.
+> **Note:** `docs/session_update.md` is in `.gitignore` — it is ephemeral
+> and never committed. No separate commit needed to remove it.
 
 ### What this is NOT
 - Not a replacement for real-time notes mid-session — capture decisions

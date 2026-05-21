@@ -78,8 +78,15 @@ lifecycle before adding network complexity.
       use `/context` vs. `/clear`; context bloat diagnosis
 
 ### Remaining (before Stage 2)
-- [ ] **Tool input validation** — what happens when the LLM passes bad
-  input? FastMCP's validation behavior; Pydantic under the hood
+- [x] **Tool input validation** — FastMCP uses Pydantic v2; type coercion
+  handles wrong types; semantic errors (empty, oversized) require manual
+  guards; `ValueError` surfaces cleanly to the LLM
+- [x] **Unit vs. integration tests** — unit tests verify logic; integration
+  tests verify wiring; DRY: test the helper once, test each caller once
+  for the connection; don't re-test logic through every caller
+- [x] **Constants vs. config files** — module-level constant when
+  environment-invariant; promote to env var when it needs to differ across
+  environments or be user-configurable
 - [ ] **Error handling patterns** — MCP-specific error surfacing vs. Python
   exceptions; when to return a string vs. raise
 - [ ] **Tool docstring design** — docstrings as LLM contracts; how wording

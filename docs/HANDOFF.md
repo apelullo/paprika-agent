@@ -29,7 +29,7 @@ bold key info; clear next step at end of each response. Code-review mode
 
 ---
 
-## Current state — Stage 1, ~95% complete
+## Current state — Stage 1, ~97% complete
 
 **Stack:** Python 3.13 · FastMCP · httpx · uv · pytest · ruff ·
 pre-commit · GitHub Actions CI · Claude Desktop (MCP client)
@@ -40,10 +40,18 @@ pre-commit · GitHub Actions CI · Claude Desktop (MCP client)
   curly apostrophe normalization via `_normalize()`
 - `search_recipes` — substring + token-order-independent title search
 
+**Validation:** `_validate_input_string(value, param, tool)` called in
+`get_recipe` and `search_recipes` after `_populate_cache()`; raises
+`ValueError` for empty/whitespace-only or oversized inputs;
+`MAX_QUERY_LENGTH = 200` module-level constant.
+
 **Architecture:** Single `server.py`. Two module-level dicts:
 `_recipe_cache` (uid → full recipe data) and `_name_index` (normalized
 name → uid). Populated once via `_populate_cache()` on first tool call.
 Semaphore(5) throttles concurrent API calls. Timeout=30 for slow API.
+
+**Test suite:** 20 tests — unit tests for pure functions, monkeypatched
+tool tests, async integration tests with `pytest-httpx`.
 
 **Infrastructure:**
 - ruff lint + format + pre-commit hooks
@@ -54,16 +62,15 @@ Semaphore(5) throttles concurrent API calls. Timeout=30 for slow API.
 - README staleness check (advisory pre-commit hook, non-blocking)
 - git-cliff + CHANGELOG.md (conventional commit changelog)
 - MIT license, full README (Features, Quick Start, Architecture, Tech Stack)
-- Six-file documentation system (see below)
+- Seven-file documentation system (see below)
 - Version tag map: v0.1.0 → v1.0.0 across 6 stages
 
 ---
 
 ## Stage 1 remaining (before v0.1.0 tag)
 
-- [ ] Tool input validation — FastMCP/Pydantic behavior; what happens
-  when LLM passes bad input
-- [ ] `sync_recipes` tool — incremental (ID set diff) + full refresh modes
+- [ ] `sync_recipes` tool — single-account; incremental (ID set diff) +
+  full refresh fallback
 - [ ] `search_recipes` expansion — scope discussion needed before implementing
 - [ ] README: Demo section — GIF/screenshot; defer until above are done
   so one recording captures everything
@@ -84,9 +91,9 @@ git push
 
 | Stage | Version | Description |
 |---|---|---|
-| 1 | v0.1.0 | MCP Tool Suite — current, ~95% complete |
+| 1 | v0.1.0 | MCP Tool Suite — current, ~97% complete |
 | 2 | v0.2.0 | Local Network Deployment (compressed) |
-| 2.5 | v0.2.0 | Local DB & Schema — SQLite, dinner history, dbt |
+| 2.5 | v0.2.0 | Local DB & Schema — SQLite, dinner history, dbt; `merge_recipes` tool |
 | 3 | v0.3.0 | Custom Client (compressed) — minimal Python client |
 | 4 | v0.4.0 | Semantic Search & Embeddings (pulled forward) |
 | 5 | v0.5.0 | Recipe Recommender + Bayesian Inference |
@@ -98,20 +105,22 @@ Cloud deployment wraps a finished ML system, not the other way around.
 
 ---
 
-## Documentation system — six files
+## Documentation system — seven files
 
 | File | Location | Owner | Purpose |
 |---|---|---|---|
 | `SUMMARY.md` | `docs/` | Project chat | Chronological log, concepts, decisions, TODOs |
 | `LEARNING_PLAN.md` | `docs/` | Project chat | Staged learning goals with check-ins |
 | `DEV_PLAN.md` | `docs/` | Project chat | Stage roadmap with version tags |
+| `HANDOFF.md` | `docs/` | Project chat | New chat context handoff (this file) |
 | `project_development_plan.md` | repo root | Claude Code | Operational memory — lean, current state only |
 | `CLAUDE.md` | repo root | Claude Code | Architecture, conventions, workflow |
 | `user_background.md` | `~/.claude/memory/` | Project chat | Career context, background, style |
 
 **Doc update process:** Defined in `docs/SUMMARY.md` → "Doc Update Process"
-section. Run at end of every meaningful session. Includes the Claude Code
-3-step prompt for committing and syncing.
+section. Redesigned this session — now includes Step 0 (`session_update.md`
+context handoff from Claude Code to this chat) before any docs are updated.
+Run at end of every meaningful session.
 
 ---
 
@@ -119,13 +128,13 @@ section. Run at end of every meaningful session. Includes the Claude Code
 
 Stage 1 completed concepts include: module-level state, N+1 query problem,
 inverted index, lazy initialization, DRY, MCP tool anatomy, conventional
-commits, pytest patterns, pre-commit hooks, GitHub Actions CI, race
-condition awareness, tool design philosophy for LLMs (context scarcity /
-determinism / composability / latency), the shifting tool/LLM boundary,
-relevance density, architecture thinking ("did you think about tomorrow
-while building today?"), README design, MIT license, AI tool division of
-labor, git-cliff and version tags, config file formats (.toml/.yaml/.json/.env),
-DevOps = CI/CD configured in YAML.
+commits, pytest patterns (unit vs. integration, DRY in tests), pre-commit
+hooks, GitHub Actions CI, race condition awareness, tool design philosophy
+for LLMs (context scarcity / determinism / composability / latency), the
+shifting tool/LLM boundary, relevance density, architecture thinking,
+README design, MIT license, AI tool division of labor, git-cliff and
+version tags, config file formats, DevOps = CI/CD configured in YAML,
+FastMCP/Pydantic input validation, constants vs. config files.
 
 ---
 
@@ -144,6 +153,10 @@ DevOps = CI/CD configured in YAML.
 
 - `search_recipes` expansion: ingredients, prep, source, nutrition (discuss scope first)
 - Local SQLite persistent cache (Stage 2.5)
+- `merge_recipes` tool — two-account merge with conflict resolution
+  strategies: keep both, last-write-wins via timestamp, manual override (Stage 2.5)
+- Account similarity metric — aggregate distance across two Paprika
+  accounts; natural Stage 5 recommender input (future idea, no stage)
 - Two-way sync with deletion protection flag (Stage 2.5)
 - Semantic search / embeddings / knowledge graphs (Stage 4)
 - Vision models for ingredient prediction (Stage 6)
@@ -168,9 +181,9 @@ production data engineering.
 
 ## Where to pick up
 
-**Immediate next:** Tool input validation — what happens when the LLM
-passes bad input to a FastMCP tool? Pydantic under the hood? Start with
-the explanation, then implement.
+**Immediate next:** `sync_recipes` tool — single-account cache sync.
+Start with the design discussion: incremental (ID set diff) vs. full
+refresh; when each mode triggers; what the tool returns.
 
-After that: `sync_recipes` tool design → `search_recipes` scope discussion
-→ Demo section → v0.1.0 tag → Stage 2.
+After that: `search_recipes` scope discussion → Demo section →
+v0.1.0 tag → Stage 2.

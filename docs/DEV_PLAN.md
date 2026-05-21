@@ -58,7 +58,7 @@ on:
 
 ## Stage 1 — MCP Tool Suite (Current)
 
-**Status: ~95% complete**
+**Status: ~97% complete**
 **Target tag: `v0.1.0`**
 **Portfolio signal:** API integration, caching design, async Python, test
 discipline, CI/CD — strong engineering foundation.
@@ -81,9 +81,13 @@ discipline, CI/CD — strong engineering foundation.
 - [x] README staleness check (advisory pre-commit hook)
 - [x] `git-cliff` + `CHANGELOG.md`
 
+- [x] Tool input validation — `_validate_input_string` helper + `MAX_QUERY_LENGTH`
+  constant; raises `ValueError` with tool/param context for empty or
+  oversized inputs; 5 new tests (suite: 15 → 20)
+
 ### Remaining (before `v0.1.0` tag)
-- [ ] **Tool input validation** — explicit FastMCP/Pydantic validation
-- [ ] **`sync_recipes` tool** — incremental (ID set diff) + full refresh
+- [ ] **`sync_recipes` tool** — single-account; incremental (ID set diff)
+  + full refresh fallback
 - [ ] **`search_recipes` expansion** — ingredients, source, prep
   instructions; discuss scope before implementing
 - [ ] **README: Demo section** — GIF or screenshot; defer until remaining
