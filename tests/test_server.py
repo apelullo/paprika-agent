@@ -117,6 +117,13 @@ def test_search_recipes_no_match(monkeypatch):
     assert "No recipes found" in result
 
 
+def test_get_recipe_empty_name(monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._populate_cache", _noop)
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        asyncio.run(get_recipe(""))
+
+
 def test_search_recipes_empty_query(monkeypatch):
     monkeypatch.setattr("server._recipe_cache", {})
     monkeypatch.setattr("server._populate_cache", _noop)
