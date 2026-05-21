@@ -160,6 +160,14 @@ async def test_fetch_recipe_404(httpx_mock):
 
 
 @pytest.mark.anyio
+async def test_populate_cache_already_warm(httpx_mock, monkeypatch):
+    existing = {"uid-1": {"uid": "uid-1", "name": "Mom's Soup"}}
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    await _populate_cache()
+    assert server._recipe_cache == existing
+
+
+@pytest.mark.anyio
 async def test_populate_cache(httpx_mock, monkeypatch):
     monkeypatch.setattr("server._recipe_cache", {})
     monkeypatch.setattr("server._name_index", {})
