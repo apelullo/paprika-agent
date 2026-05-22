@@ -13,6 +13,7 @@ from server import (
     get_recipe,
     list_recipes,
     search_recipes,
+    sync_recipes,
 )
 
 
@@ -199,4 +200,258 @@ async def test_populate_cache(httpx_mock, monkeypatch):
     await _populate_cache()
 
     assert server._recipe_cache == {"uid-1": {"uid": "uid-1", "name": "Mom’s Soup"}}
-    assert server._name_index == {"mom's soup": "uid-1"}
+    assert server._name_index == {_normalize("Mom’s Soup"): "uid-1"}
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_cold_cache(monkeypatch):
+    monkeypatch.setattr("server._cache_populated", False)
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._name_index", {})
+
+    async def mock_populate():
+        server._recipe_cache["uid-1"] = {
+            "uid": "uid-1",
+            "name": "Chicken Soup",
+            "hash": "abc",
+        }
+        server._cache_populated = True
+
+    monkeypatch.setattr("server._populate_cache", mock_populate)
+    result = await sync_recipes()
+    assert "initial load" in result
+    assert "1 recipes loaded" in result
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_incremental_new_recipe(httpx_mock, monkeypatch):
+    existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {"token": "fake-token"}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipes/",
+        json={
+            "result": [
+                {"uid": "uid-1", "hash": "abc"},
+                {"uid": "uid-2", "hash": "def"},
+            ]
+        },
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipe/uid-2/",
+        json={"result": {"uid": "uid-2", "name": "Garlic Bread", "hash": "def"}},
+    )
+
+    result = await sync_recipes()
+    assert "1 added" in result
+    assert "0 updated" in result
+    assert "0 removed" in result
+    assert "uid-2" in server._recipe_cache
+    assert "garlic bread" in server._name_index
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_incremental_edited_recipe(httpx_mock, monkeypatch):
+    existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "old-hash"}}
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {"token": "fake-token"}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipes/",
+        json={"result": [{"uid": "uid-1", "hash": "new-hash"}]},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipe/uid-1/",
+        json={
+            "result": {
+                "uid": "uid-1",
+                "name": "Chicken Soup Updated",
+                "hash": "new-hash",
+            }
+        },
+    )
+
+    result = await sync_recipes()
+    assert "0 added" in result
+    assert "1 updated" in result
+    assert "0 removed" in result
+    assert server._recipe_cache["uid-1"]["name"] == "Chicken Soup Updated"
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_incremental_unchanged_recipe(httpx_mock, monkeypatch):
+    existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    fetch_called = []
+
+    async def mock_fetch(client, token, uid, semaphore):
+        fetch_called.append(uid)
+        return None
+
+    monkeypatch.setattr("server.fetch_recipe", mock_fetch)
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {"token": "fake-token"}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipes/",
+        json={"result": [{"uid": "uid-1", "hash": "abc"}]},
+    )
+
+    result = await sync_recipes()
+    assert fetch_called == []
+    assert "0 added" in result
+    assert "0 updated" in result
+    assert "0 removed" in result
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_incremental_deleted_recipe(httpx_mock, monkeypatch):
+    existing = {
+        "uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"},
+        "uid-2": {"uid": "uid-2", "name": "Garlic Bread", "hash": "def"},
+    }
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr(
+        "server._name_index",
+        {"chicken soup": "uid-1", "garlic bread": "uid-2"},
+    )
+    monkeypatch.setattr("server._cache_populated", True)
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {"token": "fake-token"}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipes/",
+        json={"result": [{"uid": "uid-1", "hash": "abc"}]},
+    )
+
+    result = await sync_recipes()
+    assert "1 removed" in result
+    assert "uid-2" not in server._recipe_cache
+    assert "garlic bread" not in server._name_index
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_incremental_name_change(httpx_mock, monkeypatch):
+    existing = {"uid-1": {"uid": "uid-1", "name": "Old Name", "hash": "old-hash"}}
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("server._name_index", {"old name": "uid-1"})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {"token": "fake-token"}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipes/",
+        json={"result": [{"uid": "uid-1", "hash": "new-hash"}]},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipe/uid-1/",
+        json={"result": {"uid": "uid-1", "name": "New Name", "hash": "new-hash"}},
+    )
+
+    await sync_recipes()
+    assert "old name" not in server._name_index
+    assert "new name" in server._name_index
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_full_refresh(monkeypatch):
+    stale = {"uid-1": {"uid": "uid-1", "name": "Stale Recipe", "hash": "old"}}
+    monkeypatch.setattr("server._recipe_cache", stale.copy())
+    monkeypatch.setattr("server._name_index", {"stale recipe": "uid-1"})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    async def mock_populate():
+        server._recipe_cache["uid-2"] = {
+            "uid": "uid-2",
+            "name": "Fresh Recipe",
+            "hash": "new",
+        }
+        server._cache_populated = True
+
+    monkeypatch.setattr("server._populate_cache", mock_populate)
+
+    result = await sync_recipes(mode="full")
+    assert "full refresh" in result
+    assert "uid-2" in server._recipe_cache
+    assert "uid-1" not in server._recipe_cache
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_full_refresh_repopulates_after_flag_reset(monkeypatch):
+    existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
+    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    populate_called = []
+
+    async def mock_populate():
+        populate_called.append(True)
+        server._recipe_cache["uid-1"] = {
+            "uid": "uid-1",
+            "name": "Chicken Soup",
+            "hash": "abc",
+        }
+        server._cache_populated = True
+
+    monkeypatch.setattr("server._populate_cache", mock_populate)
+
+    await sync_recipes(mode="full")
+    assert populate_called == [True]
+    assert server._recipe_cache
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_full_refresh_zero_recipes(monkeypatch):
+    monkeypatch.setattr("server._recipe_cache", {})
+    monkeypatch.setattr("server._name_index", {})
+    monkeypatch.setattr("server._cache_populated", True)
+
+    async def mock_populate():
+        server._cache_populated = True
+
+    monkeypatch.setattr("server._populate_cache", mock_populate)
+
+    result = await sync_recipes(mode="full")
+    assert "full refresh" in result
+    assert server._cache_populated is True
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_invalid_mode(monkeypatch):
+    monkeypatch.setattr("server._cache_populated", True)
+    with pytest.raises(ValueError, match=r"\[sync_recipes\].*must be"):
+        await sync_recipes(mode="invalid")
