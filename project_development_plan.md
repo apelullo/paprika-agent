@@ -44,6 +44,7 @@
 ## Deferred tests
 - `get_token` bad response format — test the `raise ValueError(f"Unexpected login response: {body}")` branch
 - `fetch_recipe` non-404 HTTP error — test that `response.raise_for_status()` propagates on e.g. 500
+- Live integration test: hash verification against Test Recipe account; `tests/integration/`, `@pytest.mark.integration`, `-m "not integration"` in CI
 
 ## Deferred improvements
 - **0-recipe account messaging** — `list_recipes`, `get_recipe`, and `search_recipes` return generic "not found" responses for empty accounts, indistinguishable from a real miss. Low priority; revisit if it causes user confusion.
