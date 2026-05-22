@@ -1,11 +1,11 @@
 # Project Development Plan
 
-## Current state (as of 2026-05-21)
+## Current state (as of 2026-05-22)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest) + git-cliff
-**MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`
-**Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`), bearer token auth from `.env`
-**Stage:** 1 — MCP Tool Suite (~97% complete) — target tag: `v0.1.0`
+**MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`, `sync_recipes`
+**Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`, `_cache_populated`), bearer token auth from `.env`
+**Stage:** 1 — MCP Tool Suite (~98% complete) — target tag: `v0.1.0`
 
 ## Completed milestones
 - README: Architecture section
@@ -21,9 +21,9 @@
 - Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 6)
 - README: Features, Quick Start, Architecture, Tech Stack, Roadmap sections
 - Tool input validation — `_validate_input_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
+- `sync_recipes` — incremental (hash diff) + full refresh modes; `_cache_populated` flag fixes zero-recipe account re-fetch bug
 
 ## Next actions (Stage 1 remaining — before `v0.1.0`)
-- `sync_recipes` tool — single-account; incremental (ID set diff) + full refresh fallback
 - `search_recipes` expansion — ingredients, source, prep instructions (discuss scope first)
 - README: Demo section — defer until above tools complete, one recording captures everything
 - Tag `v0.1.0` and run release workflow when above are done
@@ -43,6 +43,9 @@
 ## Deferred tests
 - `get_token` bad response format — test the `raise ValueError(f"Unexpected login response: {body}")` branch
 - `fetch_recipe` non-404 HTTP error — test that `response.raise_for_status()` propagates on e.g. 500
+
+## Deferred improvements
+- **0-recipe account messaging** — `list_recipes`, `get_recipe`, and `search_recipes` return generic "not found" responses for empty accounts, indistinguishable from a real miss. Low priority; revisit if it causes user confusion.
 
 ## Tooling roadmap
 - **mypy or Pyright** — trigger: second source file added, or functions start calling each other
