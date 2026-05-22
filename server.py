@@ -15,6 +15,7 @@ MAX_QUERY_LENGTH = 200
 
 _recipe_cache: dict[str, dict] = {}  # uid → full recipe data
 _name_index: dict[str, str] = {}  # lowercase name → uid
+_cache_populated: bool = False
 
 
 async def get_token() -> str:
@@ -63,7 +64,8 @@ def _validate_input_string(value: str, param: str, tool: str) -> None:
 async def _populate_cache() -> None:
     """Fetch all recipes from Paprika and store in module-level cache.
     No-op if cache is already warm."""
-    if _recipe_cache:
+    global _cache_populated
+    if _cache_populated:
         return
 
     token = await get_token()
@@ -85,6 +87,8 @@ async def _populate_cache() -> None:
         if recipe is not None:
             _recipe_cache[recipe["uid"]] = recipe
             _name_index[_normalize(recipe["name"])] = recipe["uid"]
+
+    _cache_populated = True
 
 
 @mcp.tool()
@@ -136,7 +140,7 @@ async def sync_recipes(mode: str = "incremental") -> str:
     if mode not in ("incremental", "full"):
         raise ValueError("[sync_recipes] 'mode' must be 'incremental' or 'full'.")
 
-    if not _recipe_cache:
+    if not _cache_populated:
         await _populate_cache()
         n = len(_recipe_cache)
         return f"Cache was empty — performed initial load. {n} recipes loaded."

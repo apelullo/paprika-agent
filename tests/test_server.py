@@ -169,6 +169,7 @@ async def test_fetch_recipe_404(httpx_mock):
 async def test_populate_cache_already_warm(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Mom's Soup"}}
     monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("server._cache_populated", True)
     await _populate_cache()
     assert server._recipe_cache == existing
 
@@ -177,6 +178,7 @@ async def test_populate_cache_already_warm(httpx_mock, monkeypatch):
 async def test_populate_cache(httpx_mock, monkeypatch):
     monkeypatch.setattr("server._recipe_cache", {})
     monkeypatch.setattr("server._name_index", {})
+    monkeypatch.setattr("server._cache_populated", False)
 
     httpx_mock.add_response(
         method="POST",
