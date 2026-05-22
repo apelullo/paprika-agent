@@ -25,11 +25,12 @@ bold key info; clear next step at end of each response. Code-review mode
 - `uv` for all package management (never pip or venv)
 - Credentials in `.env`; always verify `.gitignore` excludes it
 - One milestone at a time — don't expand scope without being asked
-- All tools in `server.py` call `await _populate_cache()` first
+- All tools in `server.py` call `await _populate_cache()` first (except
+  `sync_recipes`, which manages the cache directly)
 
 ---
 
-## Current state — Stage 1, ~97% complete
+## Current state — Stage 1, ~99% complete
 
 **Stack:** Python 3.13 · FastMCP · httpx · uv · pytest · ruff ·
 pre-commit · GitHub Actions CI · Claude Desktop (MCP client)
@@ -39,19 +40,22 @@ pre-commit · GitHub Actions CI · Claude Desktop (MCP client)
 - `get_recipe` — O(1) name lookup via `_name_index`; case-insensitive;
   curly apostrophe normalization via `_normalize()`
 - `search_recipes` — substring + token-order-independent title search
+- `sync_recipes` — incremental (hash diff) + full refresh modes;
+  cold cache guard delegates to `_populate_cache()`
 
 **Validation:** `_validate_input_string(value, param, tool)` called in
-`get_recipe` and `search_recipes` after `_populate_cache()`; raises
-`ValueError` for empty/whitespace-only or oversized inputs;
-`MAX_QUERY_LENGTH = 200` module-level constant.
+all tools; raises `ValueError` for empty/whitespace-only or oversized
+inputs; `MAX_QUERY_LENGTH = 200` module-level constant.
 
-**Architecture:** Single `server.py`. Two module-level dicts:
-`_recipe_cache` (uid → full recipe data) and `_name_index` (normalized
-name → uid). Populated once via `_populate_cache()` on first tool call.
+**Architecture:** Single `server.py`. Three module-level structures:
+`_recipe_cache` (uid → full recipe data), `_name_index` (normalized name
+→ uid), `_cache_populated` (bool flag — separates "never populated" from
+"populated but empty"; fixes zero-recipe account re-fetch bug).
 Semaphore(5) throttles concurrent API calls. Timeout=30 for slow API.
 
-**Test suite:** 20 tests — unit tests for pure functions, monkeypatched
-tool tests, async integration tests with `pytest-httpx`.
+**Test suite:** 30 tests — unit, mocked integration, and regression tests.
+Live integration tests deferred to `tests/integration/` with
+`@pytest.mark.integration`; excluded from CI with `-m "not integration"`.
 
 **Infrastructure:**
 - ruff lint + format + pre-commit hooks
@@ -69,11 +73,9 @@ tool tests, async integration tests with `pytest-httpx`.
 
 ## Stage 1 remaining (before v0.1.0 tag)
 
-- [ ] `sync_recipes` tool — single-account; incremental (ID set diff) +
-  full refresh fallback
 - [ ] `search_recipes` expansion — scope discussion needed before implementing
-- [ ] README: Demo section — GIF/screenshot; defer until above are done
-  so one recording captures everything
+- [ ] README: Demo section — GIF/screenshot; defer until above done so
+  one recording captures everything
 - [ ] Tag v0.1.0 and run release workflow when above complete
 
 **Release workflow (manual until Stage 4-5):**
@@ -91,7 +93,7 @@ git push
 
 | Stage | Version | Description |
 |---|---|---|
-| 1 | v0.1.0 | MCP Tool Suite — current, ~97% complete |
+| 1 | v0.1.0 | MCP Tool Suite — current, ~99% complete |
 | 2 | v0.2.0 | Local Network Deployment (compressed) |
 | 2.5 | v0.2.0 | Local DB & Schema — SQLite, dinner history, dbt; `merge_recipes` tool |
 | 3 | v0.3.0 | Custom Client (compressed) — minimal Python client |
@@ -118,9 +120,8 @@ Cloud deployment wraps a finished ML system, not the other way around.
 | `user_background.md` | `~/.claude/memory/` | Project chat | Career context, background, style |
 
 **Doc update process:** Defined in `docs/SUMMARY.md` → "Doc Update Process"
-section. Redesigned this session — now includes Step 0 (`session_update.md`
-context handoff from Claude Code to this chat) before any docs are updated.
-Run at end of every meaningful session.
+section. Includes Step 0 (`session_update.md` context handoff from Claude
+Code to this chat). Run at end of every meaningful session.
 
 ---
 
@@ -128,13 +129,15 @@ Run at end of every meaningful session.
 
 Stage 1 completed concepts include: module-level state, N+1 query problem,
 inverted index, lazy initialization, DRY, MCP tool anatomy, conventional
-commits, pytest patterns (unit vs. integration, DRY in tests), pre-commit
-hooks, GitHub Actions CI, race condition awareness, tool design philosophy
-for LLMs (context scarcity / determinism / composability / latency), the
-shifting tool/LLM boundary, relevance density, architecture thinking,
-README design, MIT license, AI tool division of labor, git-cliff and
-version tags, config file formats, DevOps = CI/CD configured in YAML,
-FastMCP/Pydantic input validation, constants vs. config files.
+commits, pytest patterns (unit vs. integration, DRY in tests, call counter,
+regression tests, mocked vs. live), pre-commit hooks, GitHub Actions CI,
+race condition awareness, tool design philosophy for LLMs, the shifting
+tool/LLM boundary, relevance density, architecture thinking, README design,
+MIT license, AI tool division of labor, git-cliff and version tags, config
+file formats, DevOps = CI/CD in YAML, FastMCP/Pydantic input validation,
+constants vs. config files, hash-based sync, boolean sentinel flag,
+`pytest.mark`, plan mode vs. direct execution, architectural seam awareness,
+engineering intuition.
 
 ---
 
@@ -152,6 +155,9 @@ FastMCP/Pydantic input validation, constants vs. config files.
 ## Deferred ideas (flagged — do not implement yet)
 
 - `search_recipes` expansion: ingredients, prep, source, nutrition (discuss scope first)
+- Live integration test: hash verification against Test Recipe account;
+  `tests/integration/` directory, `@pytest.mark.integration`,
+  `-m "not integration"` in CI
 - Local SQLite persistent cache (Stage 2.5)
 - `merge_recipes` tool — two-account merge with conflict resolution
   strategies: keep both, last-write-wins via timestamp, manual override (Stage 2.5)
@@ -162,7 +168,10 @@ FastMCP/Pydantic input validation, constants vs. config files.
 - Vision models for ingredient prediction (Stage 6)
 - AWS EC2 manager + Route 53 updater (Stage 6)
 - MLOps + observability dashboards (Stage 6)
-- Claude memory management MCP server (future project — after Paprika + Yelp/SAMHSA)
+- Claude memory management MCP server / "persistent identity layer" —
+  tripartite knowledge classification, Bayesian trust + decay, graph
+  diffusion; doc at docs/claude_memory_diffusion.md; deferred until after
+  Paprika + Yelp/SAMHSA
 
 ---
 
@@ -175,15 +184,16 @@ narrative: "I build data systems that think."
 
 **Yelp/SAMHSA causal inference pipeline** (planned — after paprika Stage 1)
 Serious portfolio piece: causal inference at scale, public health impact,
-production data engineering.
+production data engineering. Will build hands-on intuition in entity
+resolution, graph similarity, and Bayesian inference — directly relevant
+to the memory MCP server project.
 
 ---
 
 ## Where to pick up
 
-**Immediate next:** `sync_recipes` tool — single-account cache sync.
-Start with the design discussion: incremental (ID set diff) vs. full
-refresh; when each mode triggers; what the tool returns.
+**Immediate next:** `search_recipes` expansion scope discussion — what
+fields beyond title should be searchable (ingredients, source, prep
+instructions)? What are the tradeoffs? Discuss before implementing.
 
-After that: `search_recipes` scope discussion → Demo section →
-v0.1.0 tag → Stage 2.
+After that: Demo section (GIF/screenshot) → v0.1.0 tag → Stage 2.

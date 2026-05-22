@@ -20,8 +20,9 @@ first time in a structured, deliberate way.
 GitHub Actions · Claude Desktop (MCP client)
 
 **What's been built:** A fully cached, tested, and CI-gated MCP server with
-three working tools (`list_recipes`, `get_recipe`, `search_recipes`),
-conventional commit history, and a production-grade project skeleton.
+four working tools (`list_recipes`, `get_recipe`, `search_recipes`,
+`sync_recipes`), conventional commit history, and a production-grade project
+skeleton.
 
 **Key strengths demonstrated so far:** Algorithmic thinking (inverted index
 proposal), DRY instincts, test-first debugging, documentation discipline,
@@ -260,6 +261,114 @@ implementation velocity, commit message *why* (not just *what*).
   key — enables full context cascade from Claude Code → this chat → Claude
   Code; `HANDOFF.md` owned by this chat, not Claude Code
 
+### 2026-05-22 — sync_recipes, Cache Flag, Bug Fixes & Test Suite
+
+**Commits:** `9db09f5` → `7e9e0af`
+
+#### What was built
+- `sync_recipes` tool — two modes:
+  - `incremental` (default): fetches uid/hash pairs from API, diffs against
+    `_recipe_cache` by hash, fetches only new/changed recipes, removes
+    deleted ones from both `_recipe_cache` and `_name_index`; handles
+    name changes by removing stale `_name_index` entry before updating
+  - `full`: resets `_cache_populated`, clears cache and index, calls
+    `_populate_cache()`
+  - Cold cache guard: delegates to `_populate_cache()` if not yet populated
+  - `global _cache_populated` hoisted to top of function (Python requires
+    `global` before any reference, not just before assignment)
+  - `strict=True` on `zip(to_fetch, fetched)` — surfaces length mismatch
+    loudly if `asyncio.gather` assumption ever breaks
+- `_cache_populated: bool = False` module-level flag — replaces
+  `if _recipe_cache:` guard in `_populate_cache()`; correctly handles
+  zero-recipe accounts where the old guard caused a re-fetch on every call
+- README updated: `sync_recipes` bullet in Features; `_cache_populated`
+  sentence in Architecture
+- Test suite grew from 20 → 30 tests; 10 new `sync_recipes` tests:
+  cold cache, incremental add/edit/unchanged/delete/rename, full refresh,
+  full refresh zero-recipe, flag reset regression, invalid mode
+- `test_populate_cache` apostrophe regression fixed: assertion now uses
+  `{_normalize("Mom's Soup"): "uid-1"}` so expected key goes through same
+  transform as actual — encoding of source literal becomes irrelevant
+- `test_sync_recipes_invalid_mode` match pattern fixed: uses
+  `match=r"\[sync_recipes\].*must be"` to avoid apostrophe encoding issues
+  entirely
+
+#### Bugs caught and fixed
+- **Full refresh no-op bug** — after adding `_cache_populated`, full
+  refresh cleared `_recipe_cache`/`_name_index` but didn't reset the flag,
+  so `_populate_cache()` was a no-op and cache was left permanently empty;
+  fix: reset `_cache_populated = False` before calling `_populate_cache()`
+- **Zero-recipe account re-fetch bug** — `if _recipe_cache:` guard in
+  `_populate_cache()` treated empty cache as cold, causing re-fetch on
+  every tool call for accounts with no recipes; fix: `_cache_populated`
+  flag tracks population state independent of cache contents
+- **Curly apostrophe regression in tests** — Edit call introduced U+2019
+  into test assertion; invisible to human eye, caught by comparing hex
+  bytes; fix: use `_normalize()` in assertions so encoding of source
+  literal is irrelevant
+
+#### Concepts learned
+- **Hash-based sync** — content fingerprint (`hash`) detects edits without
+  timestamp; more reliable than timestamps for "did this change" questions;
+  a hash change means content changed, regardless of when
+- **Boolean sentinel flag** — `_cache_populated` separates "never populated"
+  from "populated but empty"; the old `if _recipe_cache:` guard conflated
+  two distinct states; sentinel is the clean fix
+- **`asyncio.gather` behavior** — all results arrive together when the last
+  coroutine finishes; use `asyncio.as_completed()` if per-result processing
+  is needed before all are done
+- **`strict=True` on `zip()`** — raises `ValueError` if iterables have
+  different lengths; surfaces logic errors loudly rather than silently
+  truncating
+- **Regression tests** — written specifically to verify a bug that was
+  found and fixed doesn't return; `test_sync_recipes_full_refresh_repopulates
+  _after_flag_reset` is a regression test for the full refresh no-op bug
+- **`pytest.mark`** — pytest's tagging system; `@pytest.mark.anyio` changes
+  *how* a test runs (async event loop); `@pytest.mark.integration` is a
+  custom mark that changes *when/where* it runs (excluded from CI); marks
+  can be stacked
+- **Mocked vs. live integration tests** — mocked tests intercept all HTTP
+  calls and run safely in CI; live tests call real external systems, require
+  credentials, and run manually or in a separate pipeline; `tests/integration/`
+  directory convention with `-m "not integration"` in CI to exclude them
+- **Call counter pattern in tests** — monkeypatching with a list that
+  appends on each call; `assert fetch_calls == []` is more explicit and
+  debuggable than relying on `httpx_mock` to error on unexpected requests
+- **Plan mode vs. direct execution in Claude Code** — use plan mode when
+  the prompt leaves meaningful decisions to Claude Code, touches 3+ files,
+  or introduces a new pattern; skip it when the prompt fully specifies
+  behavior and follows existing patterns
+- **Architectural seam awareness** — `server.py` currently does two things:
+  MCP server + Paprika API client; the seam is visible but not yet painful;
+  Stage 2.5 will force the split into `server.py`, `paprika_client.py`,
+  `db.py`
+- **Reading code you didn't write** — parallel review of `server.py` and
+  `test_server.py` during implementation builds code-reading intuition;
+  transfers directly to code review, debugging, and onboarding
+- **Engineering intuition** — sensing a seam or design tension before being
+  able to articulate it formally is a sign of developing architectural taste;
+  the feeling surfaces before the vocabulary does
+
+#### Design decisions made
+- `_cache_populated` contract: any future code path that clears
+  `_recipe_cache`/`_name_index` must also reset `_cache_populated = False`;
+  currently only `sync_recipes` full refresh does this; Stage 2.5 will
+  replace the caching mechanism with persistent storage
+- Zero-recipe account messaging deferred — `list_recipes`, `get_recipe`,
+  `search_recipes` return generic "not found" for empty accounts,
+  indistinguishable from a real miss; accepted as low-priority edge case
+- Hash assumption: Paprika hash field covers all recipe content; to be
+  verified by live integration test against Test Recipe account; not
+  blocking Stage 1 completion
+- Live integration tests: will live in `tests/integration/`, use
+  `@pytest.mark.integration`, be excluded from CI with
+  `-m "not integration"`; written when hash verification test is built
+- `sync_recipes` race conditions noted but not fixed: recipe created between
+  list fetch and detail fetch is missed until next sync (unavoidable);
+  concurrent `sync_recipes` calls are safe (mutation phase has no await
+  points); deleted recipe between list and detail fetch handled by
+  `if recipe is None: continue`
+
 ### 2026-05-19 — git-cliff, Version Tags & Changelog Workflow
 
 **Commits:** `53d8755` → current
@@ -317,7 +426,7 @@ implementation velocity, commit message *why* (not just *what*).
 
 ### TODO (immediate — Stage 1 remaining before `v0.1.0`)
 - [x] Tool input validation — FastMCP/Pydantic behavior
-- [ ] `sync_recipes` tool — single-account; incremental (ID set diff) + full refresh fallback
+- [x] `sync_recipes` tool — incremental (hash diff) + full refresh; `_cache_populated` flag
 - [ ] `search_recipes` expansion — discuss scope before implementing
 - [ ] README: Demo section — defer until remaining tools complete
 - [ ] **Tag `v0.1.0` and run release workflow** when above are done

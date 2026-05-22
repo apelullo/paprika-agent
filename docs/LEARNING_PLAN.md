@@ -87,14 +87,32 @@ lifecycle before adding network complexity.
 - [x] **Constants vs. config files** — module-level constant when
   environment-invariant; promote to env var when it needs to differ across
   environments or be user-configurable
+- [x] **Hash-based sync and boolean sentinel flag** — content fingerprint
+  detects edits without timestamps; `_cache_populated` separates "never
+  populated" from "populated but empty"; sentinel is cleaner than
+  conflating cache state with population state
+- [x] **Regression tests** — written after a bug is found and fixed;
+  guard against the same bug returning; `test_sync_recipes_full_refresh
+  _repopulates_after_flag_reset` is the first regression test in this project
+- [x] **`pytest.mark` and mocked vs. live integration tests** — `@pytest.mark.anyio`
+  changes how a test runs; custom marks like `@pytest.mark.integration`
+  change when/where it runs; live tests in `tests/integration/`, excluded
+  from CI with `-m "not integration"`
+- [x] **Call counter pattern in tests** — monkeypatching with a list;
+  `assert fetch_calls == []` is more explicit than relying on httpx_mock
+  to error on unexpected requests
+- [x] **Plan mode vs. direct execution** — plan mode when prompt leaves
+  meaningful decisions to Claude Code or touches 3+ files; skip when
+  prompt fully specifies behavior and follows existing patterns
+- [x] **Architectural seam awareness** — sensing that `server.py` does two
+  things (MCP server + Paprika API client) before being able to articulate
+  it formally; Stage 2.5 will force the split
 - [ ] **Error handling patterns** — MCP-specific error surfacing vs. Python
   exceptions; when to return a string vs. raise
 - [ ] **Tool docstring design** — docstrings as LLM contracts; how wording
   affects tool selection and parameter passing
 - [ ] **Type annotation depth** — `dict | str`, `list[str] | str`; when to
   define a dataclass or TypedDict for richer structure
-- [ ] **`git-cliff` setup** — automated CHANGELOG from conventional commits;
-  reinforces commit discipline with visible output
 - [ ] **Context sizing intuition (calibration #1)** — first deliberate
   assessment of what "too large for context" means in practice; revisit
   at each stage until intuition is demonstrably accurate
