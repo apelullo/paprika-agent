@@ -54,16 +54,17 @@ All MCP tools live in `server.py`. The server authenticates with the Paprika API
 
 ### Caching strategy
 
-All recipes are fetched eagerly on first tool call via `_populate_cache()`, which is a no-op if the cache is already warm. Two module-level dicts are maintained:
+All recipes are fetched eagerly on first tool call via `_populate_cache()`, which is a no-op if the cache is already warm. Three module-level structures are maintained:
 
 - `_recipe_cache` — uid → full recipe dict
 - `_name_index` — lowercase name → uid (for O(1) name lookups)
+- `_cache_populated` — bool flag; separates "never populated" from "populated but empty" (fixes zero-recipe account re-fetch bug)
 
-New tools that read recipe data should call `await _populate_cache()` first and read from these dicts rather than making their own API calls.
+New tools that read recipe data should call `await _populate_cache()` first and read from these dicts rather than making their own API calls. Exception: tools that manage the cache directly (currently only `sync_recipes`) should NOT call `_populate_cache()` first. Any code path that clears `_recipe_cache`/`_name_index` must also reset `_cache_populated = False`.
 
 ### Adding a new tool
 
-Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`. Tools that accept string parameters should call `_validate_input_string(value, param, tool)` immediately after `_populate_cache()` — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`).
+Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`. Tools that accept string parameters should call `_validate_input_string(value, param, tool)` immediately — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`).
 
 ## Planning
 
