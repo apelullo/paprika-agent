@@ -7,6 +7,9 @@ app via its unofficial API.
 - `list_recipes` — fetch and cache all recipes from your Paprika account
 - `get_recipe` — retrieve full recipe details by name (case-insensitive)
 - `search_recipes` — keyword search across recipe titles (order-independent)
+- `sync_recipes` — sync the in-memory cache with the Paprika API; incremental
+  mode uses hash comparison to detect adds, edits, and deletes; full refresh
+  mode wipes and repopulates the cache
 
 ## Quick Start
 
@@ -68,7 +71,9 @@ API and populates two module-level structures: `_recipe_cache` (uid → full
 recipe data) and `_name_index` (normalized name → uid). Subsequent calls are
 pure in-memory lookups — zero additional API calls. This cache is the
 foundation all current tools share and the natural predecessor to a persistent
-local database.
+local database. A `_cache_populated` flag tracks whether the cache has been
+populated at least once, keeping the no-op guard correct for accounts with
+zero recipes.
 
 Tools are thin by design. Each one calls `_populate_cache()`, reads from the
 shared cache, and returns a result. `search_recipes` today does substring
