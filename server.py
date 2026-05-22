@@ -121,5 +121,84 @@ async def search_recipes(query: str) -> list[str] | str:
     return matches if matches else f"No recipes found matching '{query}'."
 
 
+@mcp.tool()
+async def sync_recipes(mode: str = "incremental") -> str:
+    """Sync the in-memory recipe cache with the Paprika API.
+
+    Use 'incremental' by default — fetches only new, edited, or deleted
+    recipes using hash comparison. Suggest 'full' if the user reports a recipe
+    is missing or incorrect after an incremental sync, or if the cache may
+    be partially populated.
+
+    Returns a summary of what changed.
+    """
+    _validate_input_string(mode, "mode", "sync_recipes")
+    if mode not in ("incremental", "full"):
+        raise ValueError("[sync_recipes] 'mode' must be 'incremental' or 'full'.")
+
+    if not _recipe_cache:
+        await _populate_cache()
+        n = len(_recipe_cache)
+        return f"Cache was empty — performed initial load. {n} recipes loaded."
+
+    if mode == "full":
+        _recipe_cache.clear()
+        _name_index.clear()
+        await _populate_cache()
+        n = len(_recipe_cache)
+        return f"Sync complete (full refresh). Cache contains {n} recipes."
+
+    # Incremental: fetch uid/hash list and diff against cache
+    token = await get_token()
+    semaphore = asyncio.Semaphore(5)
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            f"{PAPRIKA_API}/sync/recipes/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        api_entries = response.json()["result"]
+
+        api_map = {entry["uid"]: entry["hash"] for entry in api_entries}
+        to_fetch = [
+            uid
+            for uid, api_hash in api_map.items()
+            if uid not in _recipe_cache or _recipe_cache[uid].get("hash") != api_hash
+        ]
+        deleted_uids = [uid for uid in list(_recipe_cache) if uid not in api_map]
+
+        fetched = await asyncio.gather(
+            *[fetch_recipe(client, token, uid, semaphore) for uid in to_fetch]
+        )
+
+    added = updated = removed = 0
+
+    for uid, recipe in zip(to_fetch, fetched, strict=True):
+        if recipe is None:
+            continue
+        old = _recipe_cache.get(uid)
+        # Recipe may have been renamed — remove the stale name-index entry first
+        if old is not None and _normalize(old["name"]) != _normalize(recipe["name"]):
+            _name_index.pop(_normalize(old["name"]), None)
+        _recipe_cache[recipe["uid"]] = recipe
+        _name_index[_normalize(recipe["name"])] = recipe["uid"]
+        if old is None:
+            added += 1
+        else:
+            updated += 1
+
+    for uid in deleted_uids:
+        recipe = _recipe_cache.pop(uid, None)
+        if recipe is not None:
+            _name_index.pop(_normalize(recipe["name"]), None)
+            removed += 1
+
+    return (
+        f"Sync complete (incremental): {added} added, {updated} updated,"
+        f" {removed} removed. Cache contains {len(_recipe_cache)} recipes."
+    )
+
+
 if __name__ == "__main__":
     mcp.run()
