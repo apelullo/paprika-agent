@@ -136,6 +136,7 @@ async def sync_recipes(mode: str = "incremental") -> str:
 
     Returns a summary of what changed.
     """
+    global _cache_populated
     _validate_input_string(mode, "mode", "sync_recipes")
     if mode not in ("incremental", "full"):
         raise ValueError("[sync_recipes] 'mode' must be 'incremental' or 'full'.")
@@ -148,6 +149,7 @@ async def sync_recipes(mode: str = "incremental") -> str:
     if mode == "full":
         _recipe_cache.clear()
         _name_index.clear()
+        _cache_populated = False
         await _populate_cache()
         n = len(_recipe_cache)
         return f"Sync complete (full refresh). Cache contains {n} recipes."
