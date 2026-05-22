@@ -527,6 +527,9 @@ what was discussed here, not what was actually built.
 **Step 2 — This chat updates global memory files if needed**
 - `user_background.md` — career context, roles, growth areas, style
 - `feedback_recaps.md` — recap preferences
+- **Consider:** does anything from this session belong in a global memory
+  file that doesn't exist yet? If a new category of cross-project context
+  has emerged, create the file and add it to this list.
 
 **Step 3 — Claude Code prompt (run after Steps 1 and 2)**
 ```
