@@ -122,7 +122,16 @@ async def search_recipes(query: str) -> list[str] | str:
         for r in _recipe_cache.values()
         if all(token in _normalize(r["name"]) for token in tokens)
     ]
-    return matches if matches else f"No recipes found matching '{query}'."
+    return (
+        matches
+        if matches
+        else (
+            f"No recipes found matching '{query}' in recipe titles. "
+            f"Ingredient, source, and natural language search are coming "
+            f"in a future update. "
+            f"Try a different title keyword or a more specific term."
+        )
+    )
 
 
 @mcp.tool()
