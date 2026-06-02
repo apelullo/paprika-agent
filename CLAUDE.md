@@ -48,6 +48,16 @@ each session.
 Run `uv run git-cliff --output CHANGELOG.md` to regenerate the changelog
 from commit history.
 
+**Stage completion release workflow:**
+```bash
+uv run git-cliff --output CHANGELOG.md
+git add CHANGELOG.md && git commit -m "chore: update changelog for vX.Y.Z"
+git push
+gh release create vX.Y.Z --title "vX.Y.Z — Title" --notes "Release notes."
+```
+Run `gh release create` last — it creates the git tag at HEAD immediately;
+running it before all commits are in tags the wrong commit.
+
 ## Architecture
 
 All MCP tools live in `server.py`. The server authenticates with the Paprika API using email/password credentials from `.env` (`PAPRIKA_EMAIL`, `PAPRIKA_PASSWORD`), exchanging them for a bearer token on each cold start.
