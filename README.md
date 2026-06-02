@@ -13,7 +13,7 @@ app via its unofficial API.
 
 ## Demo
 
-<video src="https://github.com/apelullo/paprika-agent/releases/download/v0.1.0/paprika_demo_stage01_15fps.mp4"
+<video src="https://github.com/user-attachments/assets/214a9f09-ef78-420a-b58e-2ce75bc01412"
   controls autoplay loop muted
   style="max-width: 100%;">
 </video>
