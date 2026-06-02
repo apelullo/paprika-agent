@@ -16,6 +16,19 @@ Paprika stores recipe names with Unicode curly quotes (‘/’),
   but user input arrives as straight apostrophes ('), causing name
   lookups to fail silently.
 
+- Use _cache_populated flag to correctly handle zero-recipe accounts
+
+_recipe_cache being empty was indistinguishable from a cold cache,
+  causing _populate_cache to re-fetch on every call for accounts with
+  no recipes. A dedicated boolean flag decouples "has been populated"
+  from "contains recipes".
+
+- Reset _cache_populated before full refresh in sync_recipes
+
+_populate_cache() now guards on _cache_populated rather than _recipe_cache,
+  so clearing the cache without resetting the flag left it permanently empty
+  after a full refresh.
+
 
 ### CI/CD
 
@@ -88,6 +101,17 @@ Stage roadmap revised to match docs/DEV_PLAN.md: Stage 2 compressed,
 
 - Update dev plan — mark Architecture section and staleness hook complete
 
+- Add git-cliff for automated changelog generation
+
+Generates CHANGELOG.md from conventional commit history.
+  Configured to group by type: feat, fix, docs, ci, test, chore.
+
+- Mark git-cliff as completed in dev plan
+
+- Update dev plan — Stage 1 ~95%, git-cliff added, version tag map
+
+- Add docs/session_update.md to .gitignore
+
 
 ### Documentation
 
@@ -147,6 +171,69 @@ Trims redundant prose in both files, marks recently completed learning
   division of labor), restructures Stages 4–6 to match the ML-first
   roadmap reorder, and updates Open Items to reflect what's done.
 
+- Add Changelog section to CLAUDE.md
+
+- Sync DEV_PLAN.md and SUMMARY.md for 2026-05-19 session
+
+Adds Version Tag Map (v0.1.0–v1.0.0) with target tags per stage,
+  bumps Stage 1 to ~95%, marks completed items, documents git-cliff
+  workflow and concepts learned, updates Open Items for v0.1.0 target.
+
+- Move CI hook bug workaround into CLAUDE.md
+
+- Add HANDOFF.md for new chat context handoff
+
+- Note HANDOFF.md in CLAUDE.md Planning section
+
+- Update dev plan — input validation complete, Stage 1 ~97%
+
+- Update dev plan — reflect _validate_input_string rename
+
+- Note deferred network-layer tests in dev plan
+
+- Add merge_recipes to Stage 2.5, clarify sync_recipes scope, note account similarity idea
+
+- Add Step 4 to doc update process — regenerate HANDOFF.md
+
+- Sync all docs/ files for 2026-05-21 session
+
+- SUMMARY.md: add 2026-05-21 session entry; redesign doc update process
+    (Step 0 added, HANDOFF.md integrated into Step 1, Claude Code prompt
+    updated); mark input validation TODO complete
+  - LEARNING_PLAN.md: mark input validation, unit vs. integration tests,
+    and constants vs. config files as completed
+  - DEV_PLAN.md: bump Stage 1 to ~97%; mark input validation complete;
+    clarify sync_recipes as single-account
+  - HANDOFF.md: update state to ~97%; add validation section and test
+    count; add merge_recipes and account similarity to deferred ideas;
+    update "Where to pick up" to sync_recipes
+
+- Bump dev plan date to 2026-05-21
+
+- Add _validate_input_string guidance to CLAUDE.md adding-a-tool section
+
+- Update dev plan for sync_recipes and zero-recipe deferred note
+
+- Update README for sync_recipes and _cache_populated flag
+
+- Update dev plan for sync_recipes test suite
+
+- Sync all docs/ files for 2026-05-22 session
+
+- Add live integration test plan to deferred tests
+
+- Update CLAUDE.md for _cache_populated flag and sync_recipes cache contract
+
+Three module-level structures now (not two); _cache_populated flag documented
+  with its invariant — any code clearing the cache must reset the flag. sync_recipes
+  noted as the exception to the _populate_cache() call convention.
+
+- Prompt Step 2 of doc update process to create new global memory files
+
+- Add demo video to README via v0.1.0 release asset
+
+- Update demo video src to GitHub user-attachments CDN URL
+
 
 ### Features
 
@@ -171,6 +258,26 @@ Added a module-level _name_index (lowercase name → uid) populated
 
 - Add search_recipes tool with substring + token order matching
 
+- Add input validation to get_recipe and search_recipes
+
+Add MAX_QUERY_LENGTH constant and _validate_query_string helper that
+  raises ValueError with tool/param context for empty or oversized inputs.
+  Update test_search_recipes_empty_query to expect ValueError.
+
+- Add sync_recipes tool with incremental and full modes
+
+Uses hash comparison against the Paprika recipe list endpoint to detect
+  additions, edits, and deletions without re-fetching the entire library.
+
+- **search_recipes:** Improve no-match message with scope and hint
+
+- Add demo video and assets directory structure
+
+
+### Refactoring
+
+- Rename _validate_query_string to _validate_input_string
+
 
 ### Tests
 
@@ -181,6 +288,20 @@ Added a module-level _name_index (lowercase name → uid) populated
 - Add _populate_cache integration test with mocked HTTP
 
 - Add fetch_recipe 404 test
+
+- Add test_get_recipe_empty_name to cover input validation
+
+- Add MAX_QUERY_LENGTH boundary tests for get_recipe and search_recipes
+
+- Add test_populate_cache_already_warm to verify no-op on warm cache
+
+- Add direct whitespace-only test for _validate_input_string
+
+- Add sync_recipes test suite (10 tests)
+
+Covers cold cache, incremental add/edit/unchanged/delete/rename,
+  full refresh, zero-recipe full refresh, flag reset regression, and
+  invalid mode validation.
 
 
 
