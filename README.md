@@ -11,6 +11,15 @@ app via its unofficial API.
   mode uses hash comparison to detect adds, edits, and deletes; full refresh
   mode wipes and repopulates the cache
 
+## Demo
+
+<video src="assets/demos/stage_01/paprika_demo_stage01_15fps.mp4"
+  controls autoplay loop muted
+  style="max-width: 100%;">
+</video>
+
+Claude Desktop calling all four Paprika Agent tools — list, get, search, and sync.
+
 ## Quick Start
 
 ### Prerequisites

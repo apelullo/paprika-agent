@@ -20,3 +20,7 @@ main.py
 
 # Ephemeral session handoff — never committed
 docs/session_update.md
+
+# Assets
+assets/archive/
+assets/**/*.mov
