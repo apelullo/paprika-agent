@@ -30,7 +30,7 @@ automation of changelog generation on tag push becomes worth the overhead.
 
 | Version | Stage | Description |
 |---|---|---|
-| `v0.1.0` | Stage 1 | MCP tool suite complete — three tools, CI, tested, documented |
+| `v0.1.0` | Stage 1 | MCP tool suite complete — four tools, CI, tested, documented, demo video |
 | `v0.2.0` | Stage 2 + 2.5 | Local network deployment + SQLite DB + schema |
 | `v0.3.0` | Stage 3 | Custom client — minimal Python client connecting to network server |
 | `v0.4.0` | Stage 4 | Semantic search + embeddings — natural language recipe queries |
@@ -56,10 +56,10 @@ on:
 
 ---
 
-## Stage 1 — MCP Tool Suite (Current)
+## Stage 1 — MCP Tool Suite ✅ COMPLETE
 
-**Status: ~99% complete**
-**Target tag: `v0.1.0`**
+**Status: 100% — tagged v0.1.0**
+**Released:** https://github.com/apelullo/paprika-agent/releases/tag/v0.1.0
 **Portfolio signal:** API integration, caching design, async Python, test
 discipline, CI/CD — strong engineering foundation.
 
@@ -87,12 +87,13 @@ discipline, CI/CD — strong engineering foundation.
 - [x] `sync_recipes` — incremental (hash diff) + full refresh modes;
   `_cache_populated` flag fixes zero-recipe re-fetch bug; full refresh
   no-op bug caught and fixed; 10 new tests (suite: 20 → 30)
+- [x] `search_recipes` empty-results message — honest scope hint on no match;
+  expansion deferred to Stage 4 semantic search
+- [x] README: Demo section — MP4 via GitHub user-attachments CDN
+- [x] `assets/` directory structure — zero-padded stage folders, archive gitignored
+- [x] v0.1.0 tagged and released
 
-### Remaining (before `v0.1.0` tag)
-- [ ] **`search_recipes` expansion** — ingredients, source, prep
-  instructions; discuss scope before implementing
-- [ ] **README: Demo section** — GIF or screenshot; defer until remaining
-  tools are complete so one recording captures everything
+### Stage 2 next
 
 ### Deferred (flagged for later stages)
 - Local SQLite persistent cache — Stage 2.5

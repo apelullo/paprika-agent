@@ -30,7 +30,7 @@ bold key info; clear next step at end of each response. Code-review mode
 
 ---
 
-## Current state — Stage 1, ~99% complete
+## Current state — Stage 1 complete, beginning Stage 2
 
 **Stack:** Python 3.13 · FastMCP · httpx · uv · pytest · ruff ·
 pre-commit · GitHub Actions CI · Claude Desktop (MCP client)
@@ -39,7 +39,8 @@ pre-commit · GitHub Actions CI · Claude Desktop (MCP client)
 - `list_recipes` — eager cache population on first call; returns all names
 - `get_recipe` — O(1) name lookup via `_name_index`; case-insensitive;
   curly apostrophe normalization via `_normalize()`
-- `search_recipes` — substring + token-order-independent title search
+- `search_recipes` — substring + token-order-independent title search;
+  empty-results message signals Stage 4 expansion coming
 - `sync_recipes` — incremental (hash diff) + full refresh modes;
   cold cache guard delegates to `_populate_cache()`
 
@@ -50,8 +51,8 @@ inputs; `MAX_QUERY_LENGTH = 200` module-level constant.
 **Architecture:** Single `server.py`. Three module-level structures:
 `_recipe_cache` (uid → full recipe data), `_name_index` (normalized name
 → uid), `_cache_populated` (bool flag — separates "never populated" from
-"populated but empty"; fixes zero-recipe account re-fetch bug).
-Semaphore(5) throttles concurrent API calls. Timeout=30 for slow API.
+"populated but empty"). Semaphore(5) throttles concurrent API calls.
+Timeout=30 for slow API.
 
 **Test suite:** 30 tests — unit, mocked integration, and regression tests.
 Live integration tests deferred to `tests/integration/` with
@@ -65,27 +66,24 @@ Live integration tests deferred to `tests/integration/` with
   (issue #55889); manually poll CI after push until fixed
 - README staleness check (advisory pre-commit hook, non-blocking)
 - git-cliff + CHANGELOG.md (conventional commit changelog)
-- MIT license, full README (Features, Quick Start, Architecture, Tech Stack)
+- MIT license, full README with Demo video (Features, Quick Start,
+  Architecture, Tech Stack, Demo)
+- `assets/demos/stage_01/` — demo MP4 and script; zero-padded stage folders
 - Seven-file documentation system (see below)
-- Version tag map: v0.1.0 → v1.0.0 across 6 stages
+- v0.1.0 released: https://github.com/apelullo/paprika-agent/releases/tag/v0.1.0
 
 ---
 
-## Stage 1 remaining (before v0.1.0 tag)
+## Stage 2 — where to start
 
-- [ ] `search_recipes` expansion — scope discussion needed before implementing
-- [ ] README: Demo section — GIF/screenshot; defer until above done so
-  one recording captures everything
-- [ ] Tag v0.1.0 and run release workflow when above complete
+**Immediate next:** Local Network Deployment — bind server to LAN IP,
+connect Claude Desktop on primary machine to server running on a second
+machine. Design discussion first: MCP transport selection (stdio only
+works locally; SSE or streamable HTTP for network), config separation
+(dev vs. local-network), basic security considerations.
 
-**Release workflow (manual until Stage 4-5):**
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-uv run git-cliff --output CHANGELOG.md
-git add CHANGELOG.md && git commit -m "chore: update changelog for v0.1.0"
-git push
-```
+After Stage 2: Stage 2.5 (Local DB & Schema) → Stage 3 (Custom Client)
+→ Stage 4 (Semantic Search — the portfolio differentiator).
 
 ---
 
@@ -93,7 +91,7 @@ git push
 
 | Stage | Version | Description |
 |---|---|---|
-| 1 | v0.1.0 | MCP Tool Suite — current, ~99% complete |
+| 1 | v0.1.0 | MCP Tool Suite ✅ COMPLETE |
 | 2 | v0.2.0 | Local Network Deployment (compressed) |
 | 2.5 | v0.2.0 | Local DB & Schema — SQLite, dinner history, dbt; `merge_recipes` tool |
 | 3 | v0.3.0 | Custom Client (compressed) — minimal Python client |
@@ -101,9 +99,9 @@ git push
 | 5 | v0.5.0 | Recipe Recommender + Bayesian Inference |
 | 6 | v1.0.0 | Cloud, App & MLOps |
 
-**Key principle:** ML before infrastructure. Stages 4-5 (semantic search
-and recommender) are the portfolio differentiators for DS/AI engineer roles.
-Cloud deployment wraps a finished ML system, not the other way around.
+**Key principle:** ML before infrastructure. Stages 4-5 are the portfolio
+differentiators for DS/AI engineer roles. Cloud deployment wraps a
+finished ML system, not the other way around.
 
 ---
 
@@ -130,14 +128,16 @@ Code to this chat). Run at end of every meaningful session.
 Stage 1 completed concepts include: module-level state, N+1 query problem,
 inverted index, lazy initialization, DRY, MCP tool anatomy, conventional
 commits, pytest patterns (unit vs. integration, DRY in tests, call counter,
-regression tests, mocked vs. live), pre-commit hooks, GitHub Actions CI,
-race condition awareness, tool design philosophy for LLMs, the shifting
-tool/LLM boundary, relevance density, architecture thinking, README design,
-MIT license, AI tool division of labor, git-cliff and version tags, config
-file formats, DevOps = CI/CD in YAML, FastMCP/Pydantic input validation,
-constants vs. config files, hash-based sync, boolean sentinel flag,
-`pytest.mark`, plan mode vs. direct execution, architectural seam awareness,
-engineering intuition.
+regression tests, mocked vs. live, behavior contracts not message copy),
+pre-commit hooks, GitHub Actions CI, race condition awareness, tool design
+philosophy for LLMs, the shifting tool/LLM boundary, relevance density,
+architecture thinking, README design, MIT license, AI tool division of
+labor, git-cliff and version tags, config file formats, DevOps = CI/CD in
+YAML, FastMCP/Pydantic input validation, constants vs. config files,
+hash-based sync, boolean sentinel flag, pytest.mark, plan mode vs. direct
+execution, architectural seam awareness, engineering intuition, search
+field ambiguity, tool selection ambiguity as a design cost, GitHub README
+video embedding constraints, git tag management, ffmpeg basics.
 
 ---
 
@@ -154,46 +154,34 @@ engineering intuition.
 
 ## Deferred ideas (flagged — do not implement yet)
 
-- `search_recipes` expansion: ingredients, prep, source, nutrition (discuss scope first)
+- `search_recipes` expansion: ingredients, source, natural language — Stage 4
 - Live integration test: hash verification against Test Recipe account;
-  `tests/integration/` directory, `@pytest.mark.integration`,
-  `-m "not integration"` in CI
+  `tests/integration/`, `@pytest.mark.integration`, `-m "not integration"` in CI
 - Local SQLite persistent cache (Stage 2.5)
-- `merge_recipes` tool — two-account merge with conflict resolution
-  strategies: keep both, last-write-wins via timestamp, manual override (Stage 2.5)
-- Account similarity metric — aggregate distance across two Paprika
-  accounts; natural Stage 5 recommender input (future idea, no stage)
+- `merge_recipes` tool — two-account merge with conflict resolution (Stage 2.5)
+- Account similarity metric — natural Stage 5 recommender input (no stage)
 - Two-way sync with deletion protection flag (Stage 2.5)
 - Semantic search / embeddings / knowledge graphs (Stage 4)
 - Vision models for ingredient prediction (Stage 6)
 - AWS EC2 manager + Route 53 updater (Stage 6)
 - MLOps + observability dashboards (Stage 6)
-- Claude memory management MCP server / "persistent identity layer" —
-  tripartite knowledge classification, Bayesian trust + decay, graph
-  diffusion; doc at docs/claude_memory_diffusion.md; deferred until after
-  Paprika + Yelp/SAMHSA
+- Windows desktop + RTX 3090 via WSL 2 — relevant at Stage 4 (local
+  embedding inference) and Stage 5 (model training)
+- Claude memory MCP server / "persistent identity layer" — tripartite
+  knowledge classification, Bayesian trust + decay, graph diffusion;
+  deferred until after Paprika + Yelp/SAMHSA
 
 ---
 
 ## Other active projects (context only — not this chat's scope)
 
-**Job Search project** (separate Claude project — being restarted fresh)
+**Job Search project** (separate Claude project)
 Resume, LinkedIn, cover letters, portfolio strategy. Career targets: Data
 Science Lead, AI Engineer, Analytics Engineer, Data Architect. Portfolio
 narrative: "I build data systems that think."
 
 **Yelp/SAMHSA causal inference pipeline** (planned — after paprika Stage 1)
 Serious portfolio piece: causal inference at scale, public health impact,
-production data engineering. Will build hands-on intuition in entity
-resolution, graph similarity, and Bayesian inference — directly relevant
-to the memory MCP server project.
-
----
-
-## Where to pick up
-
-**Immediate next:** `search_recipes` expansion scope discussion — what
-fields beyond title should be searchable (ingredients, source, prep
-instructions)? What are the tradeoffs? Discuss before implementing.
-
-After that: Demo section (GIF/screenshot) → v0.1.0 tag → Stage 2.
+production data engineering. Builds hands-on intuition in entity resolution,
+graph similarity, and Bayesian inference — directly relevant to the memory
+MCP server project.

@@ -19,10 +19,11 @@ first time in a structured, deliberate way.
 **Stack:** Python 3.13 · FastMCP · httpx · uv · pytest · ruff · pre-commit ·
 GitHub Actions · Claude Desktop (MCP client)
 
-**What's been built:** A fully cached, tested, and CI-gated MCP server with
-four working tools (`list_recipes`, `get_recipe`, `search_recipes`,
-`sync_recipes`), conventional commit history, and a production-grade project
-skeleton.
+**What's been built:** A fully tested, CI-gated, and publicly released MCP
+server with four working tools (`list_recipes`, `get_recipe`,
+`search_recipes`, `sync_recipes`), a demo video, conventional commit
+history, and a production-grade project skeleton. Tagged and released
+as v0.1.0.
 
 **Key strengths demonstrated so far:** Algorithmic thinking (inverted index
 proposal), DRY instincts, test-first debugging, documentation discipline,
@@ -261,6 +262,92 @@ implementation velocity, commit message *why* (not just *what*).
   key — enables full context cascade from Claude Code → this chat → Claude
   Code; `HANDOFF.md` owned by this chat, not Claude Code
 
+### 2026-06-02 — search_recipes Scope Decision, Demo, v0.1.0 Release
+
+**Commits:** `fa6f327` → `3906d63`
+
+#### What was built
+- `search_recipes` empty-results message updated: now returns
+  `f"No recipes found matching '{query}' in recipe titles. Ingredient,
+  source, and natural language search are coming in a future update.
+  Try a different title keyword or a more specific term."` — honest
+  about current limitations, sets user expectations without clutter
+- `assets/` directory structure created:
+  - `assets/demos/stage_01/` — stage-specific demo material
+  - `assets/images/` — project-wide images
+  - `assets/archive/` — gitignored; for working files and drafts
+  - `.gitignore` updated: `assets/archive/`, `assets/**/*.mov`
+- Demo files added:
+  - `assets/demos/stage_01/paprika_demo_stage01_15fps.mp4` — compressed
+    from 11MB to 3MB via `ffmpeg -vcodec libx264 -crf 28 -preset slow`
+  - `assets/demos/stage_01/paprika_demo_stage01_script.docx`
+- README Demo section added: `<video>` tag with GitHub user-attachments
+  CDN URL (the only src format GitHub's README sanitizer allows for
+  inline video playback)
+- v0.1.0 tagged and released:
+  - `gh release create v0.1.0` created the tag prematurely at `09faa48`
+  - Tag moved to final HEAD after demo commits: remote tag deleted,
+    CHANGELOG regenerated and committed (`3906d63`), retagged at HEAD,
+    GitHub release republished from Draft state
+  - Final release: https://github.com/apelullo/paprika-agent/releases/tag/v0.1.0
+
+#### Design decisions made
+- **`search_recipes` expansion deferred to Stage 4** — without semantic
+  understanding, multi-field search adds noise not signal; the LLM cannot
+  reliably distinguish title match from ingredient match from source match;
+  source search is not deterministic either ("cookie and kate" vs
+  "cookieandkate.com" vs "Garlic & Zest"); tool selection ambiguity
+  between `search_recipes` and a hypothetical `find_recipes_by_source`
+  is worse than the search problem itself; Stage 4 semantic search solves
+  all of this correctly and without clutter
+- **Empty-results message is a bridge, not a fix** — honest signal to
+  the user that the limitation is known and being addressed; does not
+  fire on every search, only on zero results
+- **Test for empty-results message** — `test_search_recipes_no_match`
+  asserts `"No recipes found"` only, not the specific hint text;
+  deliberate: the hint copy will change in Stage 4 and a test that
+  asserts specific message wording would produce false negatives on
+  improvement; test behavior contracts, not message copy
+- **Asset directory structure:** zero-padded stage folders
+  (`stage_01`, `stage_02`) for correct alphabetical sort at 10+ stages;
+  `assets/archive/` gitignored for working files; `*.mov` globally
+  ignored under `assets/`
+- **ffmpeg installed** (`brew install ffmpeg`) — available for future
+  video/audio processing; compression target was crf 28, no explicit
+  size target set
+- **GitHub video embedding constraint documented** — three approaches
+  tried before one worked: relative path (stripped), release download
+  URL (stripped), drag-drop via GitHub issue editor to get
+  `user-attachments/assets/UUID` URL (works); 10MB issue attachment
+  limit required compression first; this is a one-time GUI step per demo
+
+#### Concepts learned
+- **Search system design — field ambiguity** — without semantic
+  understanding, you can't distinguish what kind of thing the user is
+  searching for; "garlic" could be a title word, an ingredient, or a
+  source name; naive multi-field search returns all three and is
+  unpredictable; the right solution is semantic search, not more fields
+- **Tool selection ambiguity as a design cost** — if the LLM has to
+  guess between two tools based on fuzzy signals, the complexity moves
+  from the implementation into the tool boundary, which is worse because
+  it's invisible and harder to debug
+- **Test behavior contracts, not message copy** — assert the invariant
+  ("no match returns a non-empty string indicating nothing was found"),
+  not the specific wording; wording that's designed to change produces
+  false negatives if tested literally
+- **GitHub README video embedding** — `<video>` tags only render with
+  `user-attachments/assets/` URLs; relative paths and release download
+  URLs are stripped by GitHub's sanitizer; the only reliable method is
+  drag-drop upload via the GitHub issue editor
+- **`brew install --cask` vs `brew install`** — `--cask` is for GUI
+  Mac applications; `brew install` is for CLI tools
+- **Git tag management** — `git push origin --delete v0.1.0` deletes a
+  remote tag; `gh release edit v0.1.0 --draft=false` publishes a Draft
+  release; `gh release list` shows release state
+- **ffmpeg compression** — `libx264 -crf 28 -preset slow`; CRF
+  (Constant Rate Factor) controls quality/size tradeoff; lower = better
+  quality, larger file; 28 is a reasonable default for screen recordings
+
 ### 2026-05-22 — sync_recipes, Cache Flag, Bug Fixes & Test Suite
 
 **Commits:** `9db09f5` → `7e9e0af`
@@ -424,12 +511,13 @@ implementation velocity, commit message *why* (not just *what*).
 
 ## Open Items & Reminders
 
-### TODO (immediate — Stage 1 remaining before `v0.1.0`)
+### TODO (immediate — Stage 2 next)
 - [x] Tool input validation — FastMCP/Pydantic behavior
 - [x] `sync_recipes` tool — incremental (hash diff) + full refresh; `_cache_populated` flag
-- [ ] `search_recipes` expansion — discuss scope before implementing
-- [ ] README: Demo section — defer until remaining tools complete
-- [ ] **Tag `v0.1.0` and run release workflow** when above are done
+- [x] `search_recipes` scope decision — title-only for Stage 1; deferred to Stage 4
+- [x] README: Demo section — MP4 via GitHub user-attachments CDN
+- [x] **v0.1.0 tagged and released**
+- [ ] Begin Stage 2 — Local Network Deployment
 
 ### Stage completion release workflow (manual until Stage 4-5)
 Run this at the end of every stage, before moving to the next:

@@ -45,7 +45,7 @@ answers and must be recalibrated as the project and AI landscape evolve:
 
 ---
 
-## Stage 1 — MCP Foundations (Current)
+## Stage 1 — MCP Foundations ✅ COMPLETE
 
 **Goal:** Solidify the request/response loop, tool design, and server
 lifecycle before adding network complexity.
@@ -107,6 +107,22 @@ lifecycle before adding network complexity.
 - [x] **Architectural seam awareness** — sensing that `server.py` does two
   things (MCP server + Paprika API client) before being able to articulate
   it formally; Stage 2.5 will force the split
+- [x] **Search system design — field ambiguity** — without semantic
+  understanding, multi-field search adds noise not signal; the right
+  solution is semantic search (Stage 4), not more fields
+- [x] **Tool selection ambiguity as a design cost** — if the LLM has
+  to guess between two tools on fuzzy signals, complexity moves into
+  the tool boundary, which is invisible and harder to debug
+- [x] **Test behavior contracts, not message copy** — assert the
+  invariant, not specific wording; copy designed to change produces
+  false negatives if tested literally
+- [x] **GitHub README video embedding** — `<video>` tags only render
+  with `user-attachments/assets/` URLs; drag-drop via issue editor is
+  the only reliable method; 10MB limit requires compression first
+- [x] **Git tag management** — deleting/moving remote tags; publishing
+  Draft releases; `gh release list` for state inspection
+- [x] **ffmpeg basics** — `libx264 -crf 28` for screen recording
+  compression; CRF = quality/size tradeoff
 - [ ] **Error handling patterns** — MCP-specific error surfacing vs. Python
   exceptions; when to return a string vs. raise
 - [ ] **Tool docstring design** — docstrings as LLM contracts; how wording
@@ -119,7 +135,7 @@ lifecycle before adding network complexity.
 
 ---
 
-## Stage 2 — Local Network Deployment
+## Stage 2 — Local Network Deployment (Next)
 
 **Goal:** Understand client/server separation, network protocols, and
 service configuration before cloud introduces additional abstraction.
