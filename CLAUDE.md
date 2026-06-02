@@ -45,8 +45,8 @@ each session.
 
 ## Changelog
 
-Run `uv run git-cliff --unreleased --output CHANGELOG.md` to regenerate
-the changelog from commit history.
+Run `uv run git-cliff --output CHANGELOG.md` to regenerate the changelog
+from commit history.
 
 ## Architecture
 
