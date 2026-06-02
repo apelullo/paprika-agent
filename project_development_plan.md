@@ -1,11 +1,11 @@
 # Project Development Plan
 
-## Current state (as of 2026-05-22)
+## Current state (as of 2026-06-02)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest) + git-cliff
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`, `sync_recipes`
 **Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`, `_cache_populated`), bearer token auth from `.env`
-**Stage:** 1 — MCP Tool Suite (~99% complete) — target tag: `v0.1.0`
+**Stage:** 2 — Local Network Deployment (next)
 
 ## Completed milestones
 - README: Architecture section
@@ -23,14 +23,18 @@
 - Tool input validation — `_validate_input_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
 - `sync_recipes` — incremental (hash diff) + full refresh modes; `_cache_populated` flag fixes zero-recipe account re-fetch bug
 - `sync_recipes` test suite — 10 tests covering cold cache, incremental add/edit/unchanged/delete/rename, full refresh, zero-recipe full refresh, flag reset regression, and invalid mode validation
+- `search_recipes` empty-results message — scope hint on no match; expansion deferred to Stage 4
+- `assets/` directory structure — `demos/stage_01/`, `images/`, `archive/` (gitignored); `*.mov` ignored
+- README: Demo section — MP4 via GitHub user-attachments CDN
+- v0.1.0 tagged and released — https://github.com/apelullo/paprika-agent/releases/tag/v0.1.0
 
-## Next actions (Stage 1 remaining — before `v0.1.0`)
-- `search_recipes` expansion — ingredients, source, prep instructions (discuss scope first)
-- README: Demo section — defer until above tools complete, one recording captures everything
-- Tag `v0.1.0` and run release workflow when above are done
+## Next actions (Stage 2)
+- Design discussion: MCP transport selection (SSE or streamable HTTP for network)
+- Bind server to LAN IP; connect Claude Desktop on primary machine to remote server
+- Config separation: dev (localhost) vs. local-network
 
 ## Stage roadmap
-1. **MCP Tool Suite** — current; see next actions above
+1. **MCP Tool Suite** ✅ COMPLETE — v0.1.0
 2. **Local Network Deployment** (compressed) — bind to LAN IP, connect Claude Desktop remotely; minimal ops
 2.5. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag; `merge_recipes` tool — two-account merge (e.g. personal + spouse's account) with conflict resolution strategies: keep both, last-write-wins via timestamp, or manual override
 3. **Custom Client** (compressed) — minimal Python script connecting to Stage 2 server; understand protocol from both sides
