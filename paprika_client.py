@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from dataclasses import dataclass
 
 import httpx
 
@@ -85,3 +86,92 @@ async def _populate_cache() -> None:
             _name_index[_normalize(recipe["name"])] = recipe["uid"]
 
     _cache_populated = True
+
+
+@dataclass
+class SyncResult:
+    """Structured result of a cache sync. `mode` is the OUTCOME mode:
+    "initial" (cold cache → full load), "full" (explicit full refresh),
+    or "incremental" (hash diff). added/updated/removed are populated
+    only for incremental; total is the recipe count after the op."""
+
+    mode: str
+    total: int
+    added: int = 0
+    updated: int = 0
+    removed: int = 0
+
+
+async def sync(mode: str) -> SyncResult:
+    """Sync the in-memory cache with the Paprika API; report what changed.
+
+    Precondition: `mode` is "incremental" or "full" (validated by the
+    caller). Owns all reads/writes of _recipe_cache, _name_index, and
+    _cache_populated.
+    """
+    global _cache_populated
+
+    if not _cache_populated:
+        await _populate_cache()
+        return SyncResult(mode="initial", total=len(_recipe_cache))
+
+    if mode == "full":
+        _recipe_cache.clear()
+        _name_index.clear()
+        _cache_populated = False
+        await _populate_cache()
+        return SyncResult(mode="full", total=len(_recipe_cache))
+
+    # Incremental: fetch uid/hash list and diff against cache
+    token = await get_token()
+    semaphore = asyncio.Semaphore(5)
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            f"{PAPRIKA_API}/sync/recipes/",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        api_entries = response.json()["result"]
+
+        api_map = {entry["uid"]: entry["hash"] for entry in api_entries}
+        to_fetch = [
+            uid
+            for uid, api_hash in api_map.items()
+            if uid not in _recipe_cache or _recipe_cache[uid].get("hash") != api_hash
+        ]
+        deleted_uids = [uid for uid in list(_recipe_cache) if uid not in api_map]
+
+        fetched = await asyncio.gather(
+            *[fetch_recipe(client, token, uid, semaphore) for uid in to_fetch]
+        )
+
+    added = updated = removed = 0
+
+    for uid, recipe in zip(to_fetch, fetched, strict=True):
+        if recipe is None:
+            continue
+        old = _recipe_cache.get(uid)
+        # Recipe may have been renamed — remove the stale name-index entry first
+        if old is not None and _normalize(old["name"]) != _normalize(recipe["name"]):
+            _name_index.pop(_normalize(old["name"]), None)
+        _recipe_cache[recipe["uid"]] = recipe
+        _name_index[_normalize(recipe["name"])] = recipe["uid"]
+        if old is None:
+            added += 1
+        else:
+            updated += 1
+
+    for uid in deleted_uids:
+        recipe = _recipe_cache.pop(uid, None)
+        if recipe is not None:
+            _name_index.pop(_normalize(recipe["name"]), None)
+            removed += 1
+
+    return SyncResult(
+        mode="incremental",
+        total=len(_recipe_cache),
+        added=added,
+        updated=updated,
+        removed=removed,
+    )

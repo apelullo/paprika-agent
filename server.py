@@ -1,6 +1,3 @@
-import asyncio
-
-import httpx
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 
@@ -69,81 +66,17 @@ async def sync_recipes(mode: str = "incremental") -> str:
     if mode not in ("incremental", "full"):
         raise ValueError("[sync_recipes] 'mode' must be 'incremental' or 'full'.")
 
-    if not paprika_client._cache_populated:
-        await paprika_client._populate_cache()
-        n = len(paprika_client._recipe_cache)
-        return f"Cache was empty — performed initial load. {n} recipes loaded."
+    result = await paprika_client.sync(mode)
 
-    if mode == "full":
-        paprika_client._recipe_cache.clear()
-        paprika_client._name_index.clear()
-        paprika_client._cache_populated = False
-        await paprika_client._populate_cache()
-        n = len(paprika_client._recipe_cache)
-        return f"Sync complete (full refresh). Cache contains {n} recipes."
-
-    # Incremental: fetch uid/hash list and diff against cache
-    token = await paprika_client.get_token()
-    semaphore = asyncio.Semaphore(5)
-
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(
-            f"{paprika_client.PAPRIKA_API}/sync/recipes/",
-            headers={"Authorization": f"Bearer {token}"},
+    if result.mode == "initial":
+        return (
+            f"Cache was empty — performed initial load. {result.total} recipes loaded."
         )
-        response.raise_for_status()
-        api_entries = response.json()["result"]
-
-        api_map = {entry["uid"]: entry["hash"] for entry in api_entries}
-        to_fetch = [
-            uid
-            for uid, api_hash in api_map.items()
-            if uid not in paprika_client._recipe_cache
-            or paprika_client._recipe_cache[uid].get("hash") != api_hash
-        ]
-        deleted_uids = [
-            uid for uid in list(paprika_client._recipe_cache) if uid not in api_map
-        ]
-
-        fetched = await asyncio.gather(
-            *[
-                paprika_client.fetch_recipe(client, token, uid, semaphore)
-                for uid in to_fetch
-            ]
-        )
-
-    added = updated = removed = 0
-
-    for uid, recipe in zip(to_fetch, fetched, strict=True):
-        if recipe is None:
-            continue
-        old = paprika_client._recipe_cache.get(uid)
-        # Recipe may have been renamed — remove the stale name-index entry first
-        if old is not None and paprika_client._normalize(
-            old["name"]
-        ) != paprika_client._normalize(recipe["name"]):
-            paprika_client._name_index.pop(paprika_client._normalize(old["name"]), None)
-        paprika_client._recipe_cache[recipe["uid"]] = recipe
-        paprika_client._name_index[paprika_client._normalize(recipe["name"])] = recipe[
-            "uid"
-        ]
-        if old is None:
-            added += 1
-        else:
-            updated += 1
-
-    for uid in deleted_uids:
-        recipe = paprika_client._recipe_cache.pop(uid, None)
-        if recipe is not None:
-            paprika_client._name_index.pop(
-                paprika_client._normalize(recipe["name"]), None
-            )
-            removed += 1
-
+    if result.mode == "full":
+        return f"Sync complete (full refresh). Cache contains {result.total} recipes."
     return (
-        f"Sync complete (incremental): {added} added, {updated} updated,"
-        f" {removed} removed. Cache contains "
-        f"{len(paprika_client._recipe_cache)} recipes."
+        f"Sync complete (incremental): {result.added} added, {result.updated} updated,"
+        f" {result.removed} removed. Cache contains {result.total} recipes."
     )
 
 

@@ -6,6 +6,7 @@ import pytest
 import paprika_client
 from paprika_client import (
     PAPRIKA_API,
+    SyncResult,
     _normalize,
     _validate_input_string,
 )
@@ -209,7 +210,7 @@ async def test_populate_cache(httpx_mock, monkeypatch):
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_cold_cache(monkeypatch):
+async def test_sync_cold_cache(monkeypatch):
     monkeypatch.setattr("paprika_client._cache_populated", False)
     monkeypatch.setattr("paprika_client._recipe_cache", {})
     monkeypatch.setattr("paprika_client._name_index", {})
@@ -223,13 +224,13 @@ async def test_sync_recipes_cold_cache(monkeypatch):
         paprika_client._cache_populated = True
 
     monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
-    result = await sync_recipes()
-    assert "initial load" in result
-    assert "1 recipes loaded" in result
+    result = await paprika_client.sync("incremental")
+    assert result.mode == "initial"
+    assert result.total == 1
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_incremental_new_recipe(httpx_mock, monkeypatch):
+async def test_sync_incremental_new_recipe(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
     monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
     monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
@@ -256,16 +257,16 @@ async def test_sync_recipes_incremental_new_recipe(httpx_mock, monkeypatch):
         json={"result": {"uid": "uid-2", "name": "Garlic Bread", "hash": "def"}},
     )
 
-    result = await sync_recipes()
-    assert "1 added" in result
-    assert "0 updated" in result
-    assert "0 removed" in result
+    result = await paprika_client.sync("incremental")
+    assert result.added == 1
+    assert result.updated == 0
+    assert result.removed == 0
     assert "uid-2" in paprika_client._recipe_cache
     assert "garlic bread" in paprika_client._name_index
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_incremental_edited_recipe(httpx_mock, monkeypatch):
+async def test_sync_incremental_edited_recipe(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "old-hash"}}
     monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
     monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
@@ -293,15 +294,15 @@ async def test_sync_recipes_incremental_edited_recipe(httpx_mock, monkeypatch):
         },
     )
 
-    result = await sync_recipes()
-    assert "0 added" in result
-    assert "1 updated" in result
-    assert "0 removed" in result
+    result = await paprika_client.sync("incremental")
+    assert result.added == 0
+    assert result.updated == 1
+    assert result.removed == 0
     assert paprika_client._recipe_cache["uid-1"]["name"] == "Chicken Soup Updated"
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_incremental_unchanged_recipe(httpx_mock, monkeypatch):
+async def test_sync_incremental_unchanged_recipe(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
     monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
     monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
@@ -326,15 +327,15 @@ async def test_sync_recipes_incremental_unchanged_recipe(httpx_mock, monkeypatch
         json={"result": [{"uid": "uid-1", "hash": "abc"}]},
     )
 
-    result = await sync_recipes()
+    result = await paprika_client.sync("incremental")
     assert fetch_called == []
-    assert "0 added" in result
-    assert "0 updated" in result
-    assert "0 removed" in result
+    assert result.added == 0
+    assert result.updated == 0
+    assert result.removed == 0
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_incremental_deleted_recipe(httpx_mock, monkeypatch):
+async def test_sync_incremental_deleted_recipe(httpx_mock, monkeypatch):
     existing = {
         "uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"},
         "uid-2": {"uid": "uid-2", "name": "Garlic Bread", "hash": "def"},
@@ -357,14 +358,14 @@ async def test_sync_recipes_incremental_deleted_recipe(httpx_mock, monkeypatch):
         json={"result": [{"uid": "uid-1", "hash": "abc"}]},
     )
 
-    result = await sync_recipes()
-    assert "1 removed" in result
+    result = await paprika_client.sync("incremental")
+    assert result.removed == 1
     assert "uid-2" not in paprika_client._recipe_cache
     assert "garlic bread" not in paprika_client._name_index
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_incremental_name_change(httpx_mock, monkeypatch):
+async def test_sync_incremental_name_change(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Old Name", "hash": "old-hash"}}
     monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
     monkeypatch.setattr("paprika_client._name_index", {"old name": "uid-1"})
@@ -386,13 +387,13 @@ async def test_sync_recipes_incremental_name_change(httpx_mock, monkeypatch):
         json={"result": {"uid": "uid-1", "name": "New Name", "hash": "new-hash"}},
     )
 
-    await sync_recipes()
+    await paprika_client.sync("incremental")
     assert "old name" not in paprika_client._name_index
     assert "new name" in paprika_client._name_index
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_full_refresh(monkeypatch):
+async def test_sync_full_refresh(monkeypatch):
     stale = {"uid-1": {"uid": "uid-1", "name": "Stale Recipe", "hash": "old"}}
     monkeypatch.setattr("paprika_client._recipe_cache", stale.copy())
     monkeypatch.setattr("paprika_client._name_index", {"stale recipe": "uid-1"})
@@ -408,14 +409,14 @@ async def test_sync_recipes_full_refresh(monkeypatch):
 
     monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
 
-    result = await sync_recipes(mode="full")
-    assert "full refresh" in result
+    result = await paprika_client.sync("full")
+    assert result.mode == "full"
     assert "uid-2" in paprika_client._recipe_cache
     assert "uid-1" not in paprika_client._recipe_cache
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_full_refresh_repopulates_after_flag_reset(monkeypatch):
+async def test_sync_full_refresh_repopulates_after_flag_reset(monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
     monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
     monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
@@ -434,13 +435,13 @@ async def test_sync_recipes_full_refresh_repopulates_after_flag_reset(monkeypatc
 
     monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
 
-    await sync_recipes(mode="full")
+    await paprika_client.sync("full")
     assert populate_called == [True]
     assert paprika_client._recipe_cache
 
 
 @pytest.mark.anyio
-async def test_sync_recipes_full_refresh_zero_recipes(monkeypatch):
+async def test_sync_full_refresh_zero_recipes(monkeypatch):
     monkeypatch.setattr("paprika_client._recipe_cache", {})
     monkeypatch.setattr("paprika_client._name_index", {})
     monkeypatch.setattr("paprika_client._cache_populated", True)
@@ -450,8 +451,8 @@ async def test_sync_recipes_full_refresh_zero_recipes(monkeypatch):
 
     monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
 
-    result = await sync_recipes(mode="full")
-    assert "full refresh" in result
+    result = await paprika_client.sync("full")
+    assert result.mode == "full"
     assert paprika_client._cache_populated is True
 
 
@@ -460,3 +461,38 @@ async def test_sync_recipes_invalid_mode(monkeypatch):
     monkeypatch.setattr("paprika_client._cache_populated", True)
     with pytest.raises(ValueError, match=r"\[sync_recipes\].*must be"):
         await sync_recipes(mode="invalid")
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_formats_incremental(monkeypatch):
+    async def mock_sync(mode):
+        return SyncResult(mode="incremental", total=5, added=1, updated=2, removed=3)
+
+    monkeypatch.setattr("paprika_client.sync", mock_sync)
+    result = await sync_recipes()
+    assert "1 added" in result
+    assert "2 updated" in result
+    assert "3 removed" in result
+    assert "5 recipes" in result
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_formats_initial(monkeypatch):
+    async def mock_sync(mode):
+        return SyncResult(mode="initial", total=3)
+
+    monkeypatch.setattr("paprika_client.sync", mock_sync)
+    result = await sync_recipes()
+    assert "initial load" in result
+    assert "3 recipes" in result
+
+
+@pytest.mark.anyio
+async def test_sync_recipes_formats_full(monkeypatch):
+    async def mock_sync(mode):
+        return SyncResult(mode="full", total=7)
+
+    monkeypatch.setattr("paprika_client.sync", mock_sync)
+    result = await sync_recipes()
+    assert "full refresh" in result
+    assert "7 recipes" in result
