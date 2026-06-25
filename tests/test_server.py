@@ -3,13 +3,13 @@ import asyncio
 import httpx
 import pytest
 
-import server
-from server import (
+import paprika_client
+from paprika_client import (
     PAPRIKA_API,
     _normalize,
-    _populate_cache,
     _validate_input_string,
-    fetch_recipe,
+)
+from server import (
     get_recipe,
     list_recipes,
     search_recipes,
@@ -32,28 +32,29 @@ def test_normalize_lowercases():
 
 def test_list_recipes(monkeypatch):
     monkeypatch.setattr(
-        "server._recipe_cache",
+        "paprika_client._recipe_cache",
         {"uid-1": {"name": "Mom's Soup"}, "uid-2": {"name": "Garlic Bread"}},
     )
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(list_recipes())
     assert set(result) == {"Mom's Soup", "Garlic Bread"}
 
 
 def test_get_recipe_found(monkeypatch):
     monkeypatch.setattr(
-        "server._recipe_cache", {"uid-1": {"uid": "uid-1", "name": "Mom's Soup"}}
+        "paprika_client._recipe_cache",
+        {"uid-1": {"uid": "uid-1", "name": "Mom's Soup"}},
     )
-    monkeypatch.setattr("server._name_index", {"mom's soup": "uid-1"})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._name_index", {"mom's soup": "uid-1"})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(get_recipe("Mom's Soup"))
     assert result == {"uid": "uid-1", "name": "Mom's Soup"}
 
 
 def test_get_recipe_not_found(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._name_index", {})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._name_index", {})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(get_recipe("Nonexistent"))
     assert "No recipe found" in result
 
@@ -61,11 +62,11 @@ def test_get_recipe_not_found(monkeypatch):
 def test_get_recipe_curly_apostrophe(monkeypatch):
     # Paprika stores curly apostrophes; user types straight — both should match
     monkeypatch.setattr(
-        "server._recipe_cache",
+        "paprika_client._recipe_cache",
         {"uid-1": {"uid": "uid-1", "name": "Mom’s Soup"}},
     )
-    monkeypatch.setattr("server._name_index", {"mom's soup": "uid-1"})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._name_index", {"mom's soup": "uid-1"})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(get_recipe("Mom's Soup"))
     assert result == {"uid": "uid-1", "name": "Mom’s Soup"}
 
@@ -80,41 +81,43 @@ def test_normalize_mixed_apostrophes():
 
 def test_search_recipes_single_token(monkeypatch):
     monkeypatch.setattr(
-        "server._recipe_cache",
+        "paprika_client._recipe_cache",
         {"uid-1": {"name": "Chicken Soup"}, "uid-2": {"name": "Garlic Bread"}},
     )
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(search_recipes("chicken"))
     assert result == ["Chicken Soup"]
 
 
 def test_search_recipes_token_order_independence(monkeypatch):
     monkeypatch.setattr(
-        "server._recipe_cache",
+        "paprika_client._recipe_cache",
         {"uid-1": {"name": "Chicken Tikka Masala"}, "uid-2": {"name": "Garlic Bread"}},
     )
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(search_recipes("masala chicken"))
     assert result == ["Chicken Tikka Masala"]
 
 
 def test_search_recipes_multiple_matches(monkeypatch):
     monkeypatch.setattr(
-        "server._recipe_cache",
+        "paprika_client._recipe_cache",
         {
             "uid-1": {"name": "Chicken Soup"},
             "uid-2": {"name": "Chicken Tikka Masala"},
             "uid-3": {"name": "Garlic Bread"},
         },
     )
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(search_recipes("chicken"))
     assert set(result) == {"Chicken Soup", "Chicken Tikka Masala"}
 
 
 def test_search_recipes_no_match(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {"uid-1": {"name": "Chicken Soup"}})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr(
+        "paprika_client._recipe_cache", {"uid-1": {"name": "Chicken Soup"}}
+    )
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     result = asyncio.run(search_recipes("pasta"))
     assert "No recipes found" in result
 
@@ -125,29 +128,29 @@ def test_validate_input_string_whitespace_only():
 
 
 def test_get_recipe_empty_name(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     with pytest.raises(ValueError, match="must be a non-empty string"):
         asyncio.run(get_recipe(""))
 
 
 def test_get_recipe_name_too_long(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     with pytest.raises(ValueError, match="exceeds"):
         asyncio.run(get_recipe("a" * 201))
 
 
 def test_search_recipes_query_too_long(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     with pytest.raises(ValueError, match="exceeds"):
         asyncio.run(search_recipes("a" * 201))
 
 
 def test_search_recipes_empty_query(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._populate_cache", _noop)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._populate_cache", _noop)
     with pytest.raises(ValueError, match="must be a non-empty string"):
         asyncio.run(search_recipes(""))
 
@@ -160,7 +163,7 @@ async def test_fetch_recipe_404(httpx_mock):
         status_code=404,
     )
     async with httpx.AsyncClient() as client:
-        result = await fetch_recipe(
+        result = await paprika_client.fetch_recipe(
             client, "fake-token", "missing-uid", asyncio.Semaphore(1)
         )
     assert result is None
@@ -169,17 +172,17 @@ async def test_fetch_recipe_404(httpx_mock):
 @pytest.mark.anyio
 async def test_populate_cache_already_warm(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Mom's Soup"}}
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
-    monkeypatch.setattr("server._cache_populated", True)
-    await _populate_cache()
-    assert server._recipe_cache == existing
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._cache_populated", True)
+    await paprika_client._populate_cache()
+    assert paprika_client._recipe_cache == existing
 
 
 @pytest.mark.anyio
 async def test_populate_cache(httpx_mock, monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._name_index", {})
-    monkeypatch.setattr("server._cache_populated", False)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._name_index", {})
+    monkeypatch.setattr("paprika_client._cache_populated", False)
 
     httpx_mock.add_response(
         method="POST",
@@ -197,27 +200,29 @@ async def test_populate_cache(httpx_mock, monkeypatch):
         json={"result": {"uid": "uid-1", "name": "Mom’s Soup"}},
     )
 
-    await _populate_cache()
+    await paprika_client._populate_cache()
 
-    assert server._recipe_cache == {"uid-1": {"uid": "uid-1", "name": "Mom’s Soup"}}
-    assert server._name_index == {_normalize("Mom’s Soup"): "uid-1"}
+    assert paprika_client._recipe_cache == {
+        "uid-1": {"uid": "uid-1", "name": "Mom’s Soup"}
+    }
+    assert paprika_client._name_index == {_normalize("Mom’s Soup"): "uid-1"}
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_cold_cache(monkeypatch):
-    monkeypatch.setattr("server._cache_populated", False)
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._name_index", {})
+    monkeypatch.setattr("paprika_client._cache_populated", False)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._name_index", {})
 
     async def mock_populate():
-        server._recipe_cache["uid-1"] = {
+        paprika_client._recipe_cache["uid-1"] = {
             "uid": "uid-1",
             "name": "Chicken Soup",
             "hash": "abc",
         }
-        server._cache_populated = True
+        paprika_client._cache_populated = True
 
-    monkeypatch.setattr("server._populate_cache", mock_populate)
+    monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
     result = await sync_recipes()
     assert "initial load" in result
     assert "1 recipes loaded" in result
@@ -226,9 +231,9 @@ async def test_sync_recipes_cold_cache(monkeypatch):
 @pytest.mark.anyio
 async def test_sync_recipes_incremental_new_recipe(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
-    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     httpx_mock.add_response(
         method="POST",
@@ -255,16 +260,16 @@ async def test_sync_recipes_incremental_new_recipe(httpx_mock, monkeypatch):
     assert "1 added" in result
     assert "0 updated" in result
     assert "0 removed" in result
-    assert "uid-2" in server._recipe_cache
-    assert "garlic bread" in server._name_index
+    assert "uid-2" in paprika_client._recipe_cache
+    assert "garlic bread" in paprika_client._name_index
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_incremental_edited_recipe(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "old-hash"}}
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
-    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     httpx_mock.add_response(
         method="POST",
@@ -292,15 +297,15 @@ async def test_sync_recipes_incremental_edited_recipe(httpx_mock, monkeypatch):
     assert "0 added" in result
     assert "1 updated" in result
     assert "0 removed" in result
-    assert server._recipe_cache["uid-1"]["name"] == "Chicken Soup Updated"
+    assert paprika_client._recipe_cache["uid-1"]["name"] == "Chicken Soup Updated"
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_incremental_unchanged_recipe(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
-    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     fetch_called = []
 
@@ -308,7 +313,7 @@ async def test_sync_recipes_incremental_unchanged_recipe(httpx_mock, monkeypatch
         fetch_called.append(uid)
         return None
 
-    monkeypatch.setattr("server.fetch_recipe", mock_fetch)
+    monkeypatch.setattr("paprika_client.fetch_recipe", mock_fetch)
 
     httpx_mock.add_response(
         method="POST",
@@ -334,12 +339,12 @@ async def test_sync_recipes_incremental_deleted_recipe(httpx_mock, monkeypatch):
         "uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"},
         "uid-2": {"uid": "uid-2", "name": "Garlic Bread", "hash": "def"},
     }
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
     monkeypatch.setattr(
-        "server._name_index",
+        "paprika_client._name_index",
         {"chicken soup": "uid-1", "garlic bread": "uid-2"},
     )
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     httpx_mock.add_response(
         method="POST",
@@ -354,16 +359,16 @@ async def test_sync_recipes_incremental_deleted_recipe(httpx_mock, monkeypatch):
 
     result = await sync_recipes()
     assert "1 removed" in result
-    assert "uid-2" not in server._recipe_cache
-    assert "garlic bread" not in server._name_index
+    assert "uid-2" not in paprika_client._recipe_cache
+    assert "garlic bread" not in paprika_client._name_index
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_incremental_name_change(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Old Name", "hash": "old-hash"}}
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
-    monkeypatch.setattr("server._name_index", {"old name": "uid-1"})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._name_index", {"old name": "uid-1"})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     httpx_mock.add_response(
         method="POST",
@@ -382,76 +387,76 @@ async def test_sync_recipes_incremental_name_change(httpx_mock, monkeypatch):
     )
 
     await sync_recipes()
-    assert "old name" not in server._name_index
-    assert "new name" in server._name_index
+    assert "old name" not in paprika_client._name_index
+    assert "new name" in paprika_client._name_index
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_full_refresh(monkeypatch):
     stale = {"uid-1": {"uid": "uid-1", "name": "Stale Recipe", "hash": "old"}}
-    monkeypatch.setattr("server._recipe_cache", stale.copy())
-    monkeypatch.setattr("server._name_index", {"stale recipe": "uid-1"})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", stale.copy())
+    monkeypatch.setattr("paprika_client._name_index", {"stale recipe": "uid-1"})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     async def mock_populate():
-        server._recipe_cache["uid-2"] = {
+        paprika_client._recipe_cache["uid-2"] = {
             "uid": "uid-2",
             "name": "Fresh Recipe",
             "hash": "new",
         }
-        server._cache_populated = True
+        paprika_client._cache_populated = True
 
-    monkeypatch.setattr("server._populate_cache", mock_populate)
+    monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
 
     result = await sync_recipes(mode="full")
     assert "full refresh" in result
-    assert "uid-2" in server._recipe_cache
-    assert "uid-1" not in server._recipe_cache
+    assert "uid-2" in paprika_client._recipe_cache
+    assert "uid-1" not in paprika_client._recipe_cache
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_full_refresh_repopulates_after_flag_reset(monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Chicken Soup", "hash": "abc"}}
-    monkeypatch.setattr("server._recipe_cache", existing.copy())
-    monkeypatch.setattr("server._name_index", {"chicken soup": "uid-1"})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
+    monkeypatch.setattr("paprika_client._name_index", {"chicken soup": "uid-1"})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     populate_called = []
 
     async def mock_populate():
         populate_called.append(True)
-        server._recipe_cache["uid-1"] = {
+        paprika_client._recipe_cache["uid-1"] = {
             "uid": "uid-1",
             "name": "Chicken Soup",
             "hash": "abc",
         }
-        server._cache_populated = True
+        paprika_client._cache_populated = True
 
-    monkeypatch.setattr("server._populate_cache", mock_populate)
+    monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
 
     await sync_recipes(mode="full")
     assert populate_called == [True]
-    assert server._recipe_cache
+    assert paprika_client._recipe_cache
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_full_refresh_zero_recipes(monkeypatch):
-    monkeypatch.setattr("server._recipe_cache", {})
-    monkeypatch.setattr("server._name_index", {})
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._recipe_cache", {})
+    monkeypatch.setattr("paprika_client._name_index", {})
+    monkeypatch.setattr("paprika_client._cache_populated", True)
 
     async def mock_populate():
-        server._cache_populated = True
+        paprika_client._cache_populated = True
 
-    monkeypatch.setattr("server._populate_cache", mock_populate)
+    monkeypatch.setattr("paprika_client._populate_cache", mock_populate)
 
     result = await sync_recipes(mode="full")
     assert "full refresh" in result
-    assert server._cache_populated is True
+    assert paprika_client._cache_populated is True
 
 
 @pytest.mark.anyio
 async def test_sync_recipes_invalid_mode(monkeypatch):
-    monkeypatch.setattr("server._cache_populated", True)
+    monkeypatch.setattr("paprika_client._cache_populated", True)
     with pytest.raises(ValueError, match=r"\[sync_recipes\].*must be"):
         await sync_recipes(mode="invalid")
