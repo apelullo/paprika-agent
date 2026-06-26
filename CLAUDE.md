@@ -60,21 +60,26 @@ running it before all commits are in tags the wrong commit.
 
 ## Architecture
 
-All MCP tools live in `server.py`. The server authenticates with the Paprika API using email/password credentials from `.env` (`PAPRIKA_EMAIL`, `PAPRIKA_PASSWORD`), exchanging them for a bearer token on each cold start.
+The codebase is two modules:
+
+- `server.py` — MCP layer only: `load_dotenv()`, `mcp = FastMCP("Paprika")`, the four `@mcp.tool()` defs, and the `__main__` entry point. Imports `dotenv`, `fastmcp`, and `paprika_client` — no `httpx`/`asyncio`/`os`, so the MCP layer knows nothing about HTTP.
+- `paprika_client.py` — the Paprika API client: authentication, the in-memory cache, recipe fetching, input validation, and sync orchestration (`sync()` → `SyncResult`).
+
+Authentication uses email/password credentials from `.env` (`PAPRIKA_EMAIL`, `PAPRIKA_PASSWORD`), exchanged for a bearer token on each cold start via `paprika_client.get_token()`.
 
 ### Caching strategy
 
-All recipes are fetched eagerly on first tool call via `_populate_cache()`, which is a no-op if the cache is already warm. Three module-level structures are maintained:
+All recipes are fetched eagerly on first tool call via `paprika_client._populate_cache()`, a no-op if the cache is already warm. Three module-level structures live in `paprika_client`:
 
 - `_recipe_cache` — uid → full recipe dict
 - `_name_index` — lowercase name → uid (for O(1) name lookups)
 - `_cache_populated` — bool flag; separates "never populated" from "populated but empty" (fixes zero-recipe account re-fetch bug)
 
-New tools that read recipe data should call `await _populate_cache()` first and read from these dicts rather than making their own API calls. Exception: tools that manage the cache directly (currently only `sync_recipes`) should NOT call `_populate_cache()` first. Any code path that clears `_recipe_cache`/`_name_index` must also reset `_cache_populated = False`.
+Read tools call `await paprika_client._populate_cache()` first and read from these dicts rather than making their own API calls. **All cache mutation lives in `paprika_client`:** `_populate_cache()` and `sync()` are the only writers of `_cache_populated`, so `server.py` never touches it — the cache-reset invariant (clearing `_recipe_cache`/`_name_index` also resets `_cache_populated`) is enforced structurally, not by a convention callers must remember. `sync_recipes` is now a thin MCP wrapper: it validates input, delegates to `paprika_client.sync()` (which returns a `SyncResult`), and formats the result; it does not call `_populate_cache()` itself.
 
 ### Adding a new tool
 
-Decorate an `async def` with `@mcp.tool()`. Tools that need recipe data should call `await _populate_cache()` and read from `_recipe_cache` / `_name_index`. Tools that accept string parameters should call `_validate_input_string(value, param, tool)` immediately — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`).
+Decorate an `async def` with `@mcp.tool()` in `server.py`. Tools that need recipe data should call `await paprika_client._populate_cache()` and read from `paprika_client._recipe_cache` / `paprika_client._name_index`. Tools that accept string parameters should call `paprika_client._validate_input_string(value, param, tool)` immediately — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`). Reference moved names via the `paprika_client.` prefix (module import), never `from paprika_client import …` for cache state or patched helpers — tests monkeypatch them on the module.
 
 ## Planning
 
