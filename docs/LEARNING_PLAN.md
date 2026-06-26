@@ -157,6 +157,24 @@ service configuration before cloud introduces additional abstraction.
   new tool candidates emerge? Does the boundary look different from both
   sides of the network?
 
+### Separation of concerns / state ownership (companion beat to networking)
+> Added 2026-06-25 via the `server.py` refactor (Piece 0) — a deliberate, documented
+> addition to Stage 2's networking focus.
+- [x] **Structural vs logical refactor** — moving files (boundary) vs moving logic
+  across a boundary (sealing); distinct operations and risk profiles.
+- [x] **Make illegal states unrepresentable** — single-owner state enforced by
+  architecture beats an invariant you must remember; correctness as structure.
+- [x] **Separation of concerns, made provable** — a clean boundary is observable
+  (`server.py` no longer importing `asyncio`/`httpx` is proof the boundary holds).
+- [x] **Typed return contracts** — a dataclass at a layer boundary separates *what
+  happened* from *how it is phrased*; assert fields, not message copy; on-ramp to
+  Pydantic / SQLite models at 2.5.
+- [x] **Import/monkeypatch discipline** — from-import only never-patched names;
+  module-reference anything patched (the patch must resolve on the module dict at
+  call time); the same missing-`global` error is silent on write-only, loud on read+write.
+- [ ] **Factory test fixtures** — mutation-safe shared test data via a fixture factory
+  in `tests/conftest.py`; flagged for just before the Stage 2.5 schema change.
+
 ---
 
 ## Stage 3 — Custom Client
@@ -250,7 +268,11 @@ Infrastructure wraps the ML — not the other way around.
 
 ## Learning Anti-Patterns to Watch
 
-- **Scope creep into future stages** — flag ideas, don't implement them early
+- **Scope creep into future stages** — flag ideas, don't implement them early.
+  *Refinement (2026-06-25):* scope discipline is not "do less," it is "be deliberate
+  and **document** the decision." A reasoned choice to widen scope, recorded in the
+  plan, is discipline; undocumented drift is the actual failure mode. The move is to
+  update the plan to match the decision, not shrink the decision to match the plan.
 - **Conceptual without implementation** — every concept should touch real code
 - **Skipping the why** — if it's not clear why a pattern exists, ask before
   implementing

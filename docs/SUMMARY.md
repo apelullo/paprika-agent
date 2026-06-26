@@ -509,6 +509,116 @@ implementation velocity, commit message *why* (not just *what*).
 
 ---
 
+### 2026-06-25 — server.py Refactor: Structural Split (A) + Logical Extraction (B)
+
+**Commits:** `24c9d45` → `090c099`
+
+> The seam flagged on 2026-05-22 ("server.py does two things... visible but not
+> yet painful") became an enforced architectural boundary. Two pieces:
+> **A built the boundary (structural); B sealed it (logical).**
+
+#### Piece 0 (A) — Structural refactor
+
+**What was built**
+- Split `server.py` → `server.py` + `paprika_client.py`. Constants, the three cache
+  globals, and five helpers (`get_token`, `fetch_recipe`, `_normalize`,
+  `_validate_input_string`, `_populate_cache`) moved **verbatim**; zero logic change.
+  `server.py` references everything via the `paprika_client.` prefix.
+- Test rewrite: blanket `server.` → `paprika_client.` (86 sites) + 3 bare call sites
+  re-qualified. New import block: from-import only never-patched names (`PAPRIKA_API`,
+  `_normalize`, `_validate_input_string`); `_populate_cache` and `fetch_recipe` left
+  module-referenced because they are monkeypatched.
+- `global _cache_populated` removed from `sync_recipes`; the full-refresh flag write
+  became `paprika_client._cache_populated = False`.
+- Gate: **30 passed**, ruff clean. CI `28186455401` → success.
+
+**Contribution to separation of concerns / state ownership**
+- *SoC:* established the **file boundary** — MCP-protocol concerns (`server.py`) vs
+  Paprika-API/cache concerns (`paprika_client.py`). Built the two rooms.
+- *State ownership:* relocated cache state into `paprika_client`, but ownership was
+  **not yet exclusive** — `sync_recipes` still reached across to write the flag.
+  Moved the state; did not yet seal it.
+
+**Risk noted:** no test exercises the relocated flag write (every full-refresh test
+mocks `_populate_cache`), so a bug — bare `_cache_populated = False` silently becoming
+a dead function-local — would pass green. Verified correct **by eye**, not by tests.
+
+#### Option B — Logical refactor
+
+**What was built**
+- Extracted sync orchestration into `paprika_client.sync(mode) -> SyncResult`
+  (cold/full/incremental logic moved out of `sync_recipes`, un-prefixed, with
+  `global _cache_populated` restored and structured returns).
+- `SyncResult` dataclass: `mode` / `total` / `added` / `updated` / `removed`.
+- `sync_recipes` reduced to **validate → delegate → format**: validates the mode
+  (validation stays in the wrapper), calls `sync()`, branches on `result.mode` to
+  build the same prose. Output **byte-identical** (runtime-verified, em-dash included).
+  Removed `import asyncio` and `import httpx` from `server.py`.
+- Tests: 9 orchestration tests retargeted onto `paprika_client.sync()` asserting
+  `SyncResult` fields (renamed `test_sync_recipes_*` → `test_sync_*`); 1 validation
+  test kept on the wrapper; 3 new formatting tests mock `sync` to isolate the prose
+  layer. **30 → 33 tests.**
+- Gate: **33 passed**, ruff clean. CI `28201385695` → success.
+
+**Contribution to separation of concerns / state ownership**
+- *SoC:* **completed** the boundary. `server.py` owns only MCP concerns (tools +
+  presentation); `paprika_client` owns all API orchestration. Proof: `server.py` no
+  longer imports `asyncio`/`httpx` — the MCP layer does not know HTTP exists. Also
+  split *what happened* (`SyncResult`) from *how it is phrased* (formatting).
+- *State ownership:* `paprika_client` is now the **sole mutator** of `_cache_populated`
+  — ownership is exclusive and **structural**. `server.py` cannot touch the flag, so
+  the cache invariant is enforced by architecture, not convention. The missing-`global`
+  failure mode flipped from **silent (A)** to **loud `UnboundLocalError` (B)**, caught
+  by all 9 orchestration tests.
+
+**One-line synthesis:** A built the boundary; B sealed it. Structural separation
+created the rooms; logical extraction made state ownership exclusive and enforced.
+
+#### Concepts learned
+- **Import/monkeypatch discipline (precise rule)** — from-import only names never
+  monkeypatched (constants, pure helpers); reference via the module anything that is
+  patched, so the lookup resolves on the module dict at call time and the patch shows
+  through. The same principle the production code follows.
+- **Same error, opposite detectability** — a missing `global` is *silent* when the
+  function only writes the flag (dead function-local; A) but *loud* when it also reads
+  it (`UnboundLocalError`; B). Read+write makes the invariant self-checking.
+- **Make illegal states unrepresentable** — moving sole ownership of `_cache_populated`
+  into one module converts a remembered rule ("clearing the cache must reset the flag")
+  into a boundary the code enforces. Correctness as architecture, not discipline.
+- **Typed return contracts** — a dataclass (`SyncResult`) separates *what happened*
+  (structured data, client concern) from *how it is phrased* (presentation). Tests
+  assert `result.added == 1`, not `"1 added" in result` — decoupled from copy, and the
+  on-ramp to typed models (Pydantic / SQLite rows) at Stage 2.5+.
+- **Structural vs logical refactor** — A moved files (boundary); B moved logic across
+  the boundary (sealing). Distinct operations, distinct risk profiles.
+
+#### Design decisions made
+- **Option A then B, B immediately after** — A is the minimal safe move (pure file
+  split, clean git checkpoint); B completes separation. Doing B now rather than at
+  Stage 2.5 because it is the natural completion of the same refactor and yields the
+  clean MCP-only surface that Pieces 1–3 bolt onto.
+- **`SyncResult` as a dataclass, not a dict** — typed/documented contract, fail-fast
+  on field errors, on-ramp to schema modeling at 2.5. Small practical gain today; the
+  point is establishing the pattern while it is cheap.
+- **Validation stays in `sync_recipes`, not duplicated into `sync()`** — `sync()`
+  trusts a valid mode per its documented precondition; the wrapper guards the boundary.
+- **Stage 2 scope deliberately widened** — launchd + per-device auth pulled forward
+  from Stage 6, and the `server.py` split pulled forward from Stage 2.5 into Piece 0.
+  Documented as a deliberate decision (see DEV_PLAN), not scope creep.
+
+#### Process / tooling
+- **Doc-update timing** — run **one** doc pass after B, not between A and B: A is a
+  deliberately transitional state that B is about to undo; documenting it then redoing
+  it is waste. The git commit (not the doc update) is the rollback checkpoint. Capture
+  A and B as labeled sub-entries in one session block.
+- **effort vs thinking are separate settings** — effort = thoroughness budget; thinking
+  = visible reasoning trace. Use both for architecture/design and debugging; neither for
+  mechanical work. `/effort high` at the start of complex Claude Code sessions. Plan
+  mode = Shift+Tab ×2 (or `/plan`); read-only enforced at the tool level; approve the
+  plan to execute; resets to off on restart.
+
+---
+
 ## Open Items & Reminders
 
 ### TODO (immediate — Stage 2 next)
@@ -517,7 +627,10 @@ implementation velocity, commit message *why* (not just *what*).
 - [x] `search_recipes` scope decision — title-only for Stage 1; deferred to Stage 4
 - [x] README: Demo section — MP4 via GitHub user-attachments CDN
 - [x] **v0.1.0 tagged and released**
-- [ ] Begin Stage 2 — Local Network Deployment
+- [x] **Stage 2 Piece 0 — refactor complete** (commits `24c9d45` structural split,
+  `090c099` Option B); `server.py` = MCP only, `paprika_client` owns sync + cache;
+  33 tests, CI green
+- [ ] Begin Stage 2 Piece 1 — `.env` schema + auto-detection logic (transport mode)
 
 ### Stage completion release workflow (manual until Stage 4-5)
 Run this at the end of every stage, before moving to the next:
@@ -539,6 +652,9 @@ git push
 
 ### Deferred ideas (flagged, not forgotten)
 - Local SQLite persistent cache — Stage 2.5
+- Centralize test fixtures (factory fixture in `tests/conftest.py`) — just before the
+  Stage 2.5 schema change; mutation-safe shared recipe data, eliminates inline-dict
+  duplication across the suite
 - Two-way sync with deletion flag ("safe sync only") — Stage 2.5
 - `search_recipes` expansion: ingredients, prep, source, nutrition
 - Semantic search / embeddings / knowledge graphs — Stage 4

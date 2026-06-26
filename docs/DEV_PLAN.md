@@ -113,14 +113,22 @@ Deliberately minimal — full service configuration deferred to Stage 6.
 ops awareness — rare for a DS candidate.
 
 ### Planned work
-- [ ] Choose MCP transport for network use (SSE or streamable HTTP)
+- [x] Choose MCP transport — **Streamable HTTP** (SSE deprecated; dropped April 2026)
+- [x] Refactor `server.py` → `server.py` + `paprika_client.py` (Piece 0; 33 tests, CI green)
 - [ ] Bind server to LAN IP (not just localhost)
 - [ ] Configure Claude Desktop on primary machine to connect to remote server
 - [ ] Document network configuration and basic security considerations
 
-### Deliberately deferred from original Stage 2
-- `launchd`/`systemd` service setup — revisit at Stage 6 with cloud
-- Full auth hardening on LAN — revisit at Stage 6
+### Scope decisions (2026-06-25 — deliberate, documented)
+- **`launchd` service setup pulled forward into Stage 2** (Piece 6). An always-on
+  server that survives reboot is the real Stage 2 deliverable; without it the server
+  is "run manually," not deployed. *Full* service hardening still deferred to Stage 6.
+- **Per-device bearer-token auth added in Stage 2** (Piece 3). *Full* auth hardening
+  (OAuth 2.1) still deferred to Stage 6.
+- **`server.py` split pulled forward from Stage 2.5 into Piece 0** — done (commits
+  `24c9d45`, `090c099`); cleaner MCP-only surface before Stage 2's MCP-side additions.
+- **Health endpoint (`GET /health`) added in Stage 2** (Piece 4) — unauthenticated;
+  isolates failure layers during network debugging.
 
 ### Architecture decision points
 - Transport protocol selection (stdio only works locally)
@@ -139,6 +147,9 @@ instincts — directly relevant to DS, analytics engineer, and AI engineer
 roles.
 
 ### Planned work
+- [ ] **Centralize test fixtures first** — factory fixture in `tests/conftest.py`
+  for mutation-safe shared recipe data; do this just before the schema change, when
+  the recipe shape is about to grow anyway (deferred from the 2026-06-25 refactor).
 - [ ] **Schema design discussion** — review whiteboard design; finalize
   tables, primary keys, foreign keys, indices, and triggers
 - [ ] **Recipe table** — uid, name, ingredients, instructions, source,
