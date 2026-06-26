@@ -1,11 +1,11 @@
 # Project Development Plan
 
-## Current state (as of 2026-06-02)
+## Current state (as of 2026-06-25)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest + GitHub Actions CI (ruff check, ruff format, pytest) + git-cliff
-**MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`, `sync_recipes`
-**Architecture:** single file (`server.py`), eager in-memory cache (`_recipe_cache`, `_name_index`, `_cache_populated`), bearer token auth from `.env`
-**Stage:** 2 — Local Network Deployment (next)
+**MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`, `sync_recipes` (thin wrapper → `paprika_client.sync()`)
+**Architecture:** two modules — `server.py` (MCP tools + entry point) and `paprika_client.py` (Paprika API + cache + `sync()`/`SyncResult`); eager in-memory cache (`_recipe_cache`, `_name_index`, `_cache_populated`) owned solely by `paprika_client`; bearer token auth from `.env`
+**Stage:** 2 — Local Network Deployment (Piece 0 refactor done; Piece 1 next)
 
 ## Completed milestones
 - README: Architecture section
@@ -27,15 +27,16 @@
 - `assets/` directory structure — `demos/stage_01/`, `images/`, `archive/` (gitignored); `*.mov` ignored
 - README: Demo section — MP4 via GitHub user-attachments CDN
 - v0.1.0 tagged and released — https://github.com/apelullo/paprika-agent/releases/tag/v0.1.0
+- `server.py` refactor (Stage 2 Piece 0) — split into `server.py` (MCP) + `paprika_client.py` (API, cache, `sync()`/`SyncResult`); `sync_recipes` now validate→delegate→format; `paprika_client` sole owner of `_cache_populated`; suite 30→33; commits `24c9d45` (structural split), `090c099` (sync extraction)
 
 ## Next actions (Stage 2)
-- Design discussion: MCP transport selection (SSE or streamable HTTP for network)
-- Bind server to LAN IP; connect Claude Desktop on primary machine to remote server
-- Config separation: dev (localhost) vs. local-network
+- Piece 0 — `server.py`/`paprika_client.py` split ✅ done (`24c9d45`, `090c099`)
+- Piece 1 (next) — `.env` schema + transport auto-detection in `server.py` (re-introduces `import os`)
+- Then: Streamable HTTP transport (SSE deprecated); per-device bearer-token auth; unauthenticated `GET /health`; bind to LAN IP; `launchd` always-on service on MacBook Air; Claude Desktop remote config
 
 ## Stage roadmap
 1. **MCP Tool Suite** ✅ COMPLETE — v0.1.0
-2. **Local Network Deployment** (compressed) — bind to LAN IP, connect Claude Desktop remotely; minimal ops
+2. **Local Network Deployment** — Streamable HTTP transport, per-device bearer-token auth, `GET /health`, LAN IP bind, `launchd` always-on service; `server.py` split done (Piece 0)
 2.5. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag; `merge_recipes` tool — two-account merge (e.g. personal + spouse's account) with conflict resolution strategies: keep both, last-write-wins via timestamp, or manual override
 3. **Custom Client** (compressed) — minimal Python script connecting to Stage 2 server; understand protocol from both sides
 4. **Semantic Search & Embeddings** — sentence-transformers, FAISS, hybrid search, embedding storage in Stage 2.5 DB
@@ -54,7 +55,7 @@
 - **0-recipe account messaging** — `list_recipes`, `get_recipe`, and `search_recipes` return generic "not found" responses for empty accounts, indistinguishable from a real miss. Low priority; revisit if it causes user confusion.
 
 ## Tooling roadmap
-- **mypy or Pyright** — trigger: second source file added, or functions start calling each other
+- **mypy or Pyright** — trigger met (2026-06-25: `paprika_client.py` added; cross-module calls); revisit adding static type-checking
 - **sentence-transformers + FAISS** — trigger: Stage 4 begins
 - **SQLAlchemy or raw sqlite3** — trigger: Stage 2.5 begins (discuss ORM vs. raw SQL then)
 - **git-cliff CI automation** — trigger: Stage 4-5; add tag-triggered changelog regeneration to `ci.yml`
