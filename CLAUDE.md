@@ -37,7 +37,7 @@ with no fix referenced, and no open successor issue exists as of
 each `git push`, manually poll CI:
 
 ```bash
-gh run list --commit <SHA> --repo apelullo/paprika-agent
+gh run list --commit $(git rev-parse HEAD) --repo apelullo/paprika-agent
 ```
 
 The hook in `.claude/settings.json` is already configured correctly
