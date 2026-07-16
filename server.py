@@ -1,7 +1,10 @@
+import os
+
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 import paprika_client
+from config import ServerConfig
 
 load_dotenv()
 
@@ -81,4 +84,7 @@ async def sync_recipes(mode: str = "incremental") -> str:
 
 
 if __name__ == "__main__":
+    # Resolved now to prove the load_dotenv → from_env path; transport
+    # wiring is Piece 2.
+    config = ServerConfig.from_env(os.environ)
     mcp.run()

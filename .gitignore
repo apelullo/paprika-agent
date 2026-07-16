@@ -9,8 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
-# Secrets
-.env
+# Secrets — ignore all .env variants, but keep the secret-free template
+.env*
+!.env.example
 
 # Claude Code
 .claude/settings.local.json
