@@ -109,23 +109,29 @@ Do not modify files in `docs/` unless explicitly asked to do so.
 
 ## Document ownership
 
-> Authored/ratified by the project chat (the orchestrator); Claude Code applies edits
-> to this section but does not originate them. Canonical location for artifact
-> ownership — do not duplicate elsewhere; other docs reference this table.
+> Authored/ratified by the project chat (the orchestrator); Claude Code applies
+> edits to this section but does not originate them. Canonical location — other
+> docs reference this table, never duplicate it.
 
-| Artifact | Owner | Update trigger |
-|---|---|---|
-| `README.md` | content/voice/narrative → project chat; technical-accuracy flag + git mechanics → Claude Code | staleness hook; stage ships |
-| `CHANGELOG.md` | Claude Code (git-cliff) | stage release |
-| `CLAUDE.md` | Claude Code (except this ownership section → project chat) | arch/workflow change |
-| `project_development_plan.md` | Claude Code (operational memory) | milestone / tool / arch change |
-| `cliff.toml`, `.github/workflows/*`, `.claude/settings.json` | Claude Code | tooling change |
-| `docs/SUMMARY.md`, `LEARNING_PLAN.md`, `DEV_PLAN.md` | project chat | batch doc pass |
-| `docs/HANDOFF.md` | project chat — regenerated VIEW, never authored directly | batch doc pass |
-| `docs/session_update.md` | Claude Code (append-as-you-go scratchpad; gitignored, ephemeral) | continuous |
-| `~/.claude/memory/{user_background,feedback_recaps,working_principles}.md` | project chat | batch doc pass |
-| `~/.claude/memory/MEMORY.md` and `~/.claude/projects/<project>/memory/*` | Claude Code (auto) — do not hand-edit | automatic |
-| `~/.claude/CLAUDE.md` (global) | manual (Art) | as needed |
+| Artifact | Author (content authority) | Executor (applies + commits) | Trigger |
+|---|---|---|---|
+| `README.md` | narrative → project chat; technical-accuracy → Claude Code | Claude Code | staleness hook; stage ships |
+| `CHANGELOG.md` | Claude Code (git-cliff) | Claude Code | stage release |
+| `CLAUDE.md` | Claude Code (this ownership section → project chat) | Claude Code | arch/workflow change |
+| `project_development_plan.md` | Claude Code | Claude Code | milestone / tool / arch |
+| `cliff.toml`, `.github/workflows/*`, `.claude/settings.json` | Claude Code | Claude Code | tooling change |
+| `docs/SUMMARY.md`, `LEARNING_PLAN.md`, `DEV_PLAN.md` | project chat | Claude Code | batch pass |
+| `docs/HANDOFF.md` | project chat (regenerated VIEW) | Claude Code | batch pass |
+| `docs/session_update.md` | Claude Code (scratchpad) | Claude Code | continuous |
+| `~/.claude/memory/{user_background,feedback_recaps,working_principles}.md` | project chat + Claude Code (joint) | whoever's in-session writes directly (read-before-write; no commit) | on insight; reconciled at batch pass |
+| `~/.claude/memory/MEMORY.md`, `projects/<p>/memory/*` | Claude Code (auto) | memory system (not hand-edited) | automatic |
+| `~/.claude/CLAUDE.md` (global) | Art | Art | as needed |
+
+> **Executor rule (git boundary, three branches):** in-repo ⇒ Claude Code applies +
+> apostrophe-greps + commits (atomic where git lives); out-of-repo global memory ⇒
+> either chat writes directly (read-before-write, additive-preferred; no commit),
+> reconciled at the batch pass; auto-memory ⇒ the memory system. The Executor column
+> must obey this rule — that's the audit.
 
 Principle: settled conventions live in-repo where every actor and Art can see them;
 memory holds only provisional/in-flight facts. Promote a memory-only convention here
