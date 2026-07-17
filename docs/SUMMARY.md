@@ -674,97 +674,77 @@ git push
 
 ## Doc Update Process
 
-> Run this at the end of any session where significant progress was made,
-> plans changed, or new concepts were learned. Keeps all interconnected
-> documents consistent without ad-hoc one-file-at-a-time updates.
+> Two tiers. **Continuous:** notable events are appended to a scratchpad as they
+> happen. **Batch:** at each piece boundary a full pass consumes the scratchpad and
+> syncs all docs. The scratchpad prevents loss continuously, so the batch pass stays
+> small and never reconstructs from memory.
 
-### Trigger conditions
-- A stage is completed or its scope changes
-- The roadmap order changes
-- New concepts are learned that belong in the learning plan
-- Career goals, target roles, or portfolio strategy shift
-- A new tool, pattern, or workflow is adopted
-- Any memory file becomes stale relative to current reality
+### Tier 1 — Continuous scratchpad (as-you-go)
 
-### Document ownership
+Claude Code appends a dated, typed bullet to `docs/session_update.md` the moment
+something notable happens — never reconstructed at session end. **If the file does
+not exist (e.g. a prior batch pass consumed and deleted it), the first append
+recreates it** — creation is a property of the append, not a separate step. The file
+is gitignored, ephemeral, and accumulates across sessions until a batch pass consumes
+and deletes it. Format: `- YYYY-MM-DD PREFIX: one line.`
 
-| File | Owner |
-|---|---|
-| `docs/SUMMARY.md` | This chat |
-| `docs/LEARNING_PLAN.md` | This chat |
-| `docs/DEV_PLAN.md` | This chat |
-| `docs/HANDOFF.md` | This chat |
-| `project_development_plan.md` | Claude Code |
-| `CLAUDE.md` (project) | Claude Code |
-| `~/.claude/CLAUDE.md` (global) | Manual |
-| `~/.claude/memory/user_background.md` | This chat |
-| `~/.claude/memory/feedback_recaps.md` | This chat |
-| `~/.claude/memory/MEMORY.md` | Claude Code (auto) — do not edit manually |
+| Prefix | Captures | Routes to (at batch pass) |
+|---|---|---|
+| `SHIPPED:` | built / committed | SUMMARY "What was built" |
+| `DECISION:` | choice + reason/principle | SUMMARY "Design decisions" + Decision Log |
+| `LEARNED:` | concept learned in dialogue | SUMMARY "Concepts learned" + LEARNING_PLAN |
+| `EXTERNAL:` | outside fact changed | CLAUDE.md / DEV_PLAN as relevant |
+| `FLAG:` | forward flag / deferred idea | SUMMARY "Deferred ideas" |
 
-### Step-by-step
+The project chat's own dialogue learnings are NOT written to the scratchpad — the
+project chat harvests them directly from the live conversation at the batch pass. The
+scratchpad is Claude Code's outbound channel only.
 
-**Step 0 — Claude Code generates `docs/session_update.md`**
+### Tier 2 — Batch pass (piece boundary)
 
-Run this in Claude Code before starting the doc update:
-```
-Generate docs/session_update.md with two sections:
-1. Git log: output of `git log --oneline -50`
-2. Session notes: anything we did or decided that the project chat
-   wouldn't know from its own conversation — implementation changes,
-   files touched, decisions made.
-Do not commit this file.
-```
+**Trigger:** a piece/stage completes or changes scope; roadmap order changes; new
+concepts learned; career/portfolio framing shifts; a new tool/pattern/workflow is
+adopted; any doc or memory file goes stale.
 
-This chat then reads `session_update.md` and `project_development_plan.md`
-to gain full context before updating any docs. This is the context handoff
-from Claude Code to this chat — without it, docs updates reflect only
-what was discussed here, not what was actually built.
+**Ownership:** the canonical artifact-ownership matrix lives in `CLAUDE.md`
+(auto-loads every Claude Code session). The project chat authors/ratifies that section;
+Claude Code applies edits but does not originate them. Do not duplicate it here.
 
-**Step 1 — This chat updates `docs/` files**
-- `SUMMARY.md` — session entry: built, learned, decided; update TODOs
-- `LEARNING_PLAN.md` — check off completed; add concepts to right stage
-- `DEV_PLAN.md` — mark completed; update order/scope if changed
-- `HANDOFF.md` — regenerate from current state of all four docs; update
-  "Where to pick up" to reflect current next action from
-  `project_development_plan.md`
+**Step 0 — Consume the scratchpad.** The project chat reads `docs/session_update.md`
+(typed bullets since last pass) + `project_development_plan.md`. If the scratchpad
+is missing or thin (append-as-you-go lapsed), fall back to a since-last-pass log:
+`git log --oneline $(git log -1 --format=%H -- docs/SUMMARY.md)..HEAD`
+(anchors to the last SUMMARY.md commit = the last pass; if SUMMARY.md is ever
+hand-edited between passes, use an explicit marker instead).
 
-**Step 2 — This chat updates global memory files if needed**
-- `user_background.md` — career context, roles, growth areas, style
-- `feedback_recaps.md` — recap preferences
-- **Consider:** does anything from this session belong in a global memory
-  file that doesn't exist yet? If a new category of cross-project context
-  has emerged, create the file and add it to this list.
+**Step 1 — The project chat updates `docs/`** by routing each bullet per the table, plus
+its own harvested learnings:
+- SUMMARY.md — session entry (built/learned/decided); update TODOs; append a
+  Decision Log line per DECISION
+- LEARNING_PLAN.md — check off completed; file LEARNED concepts to the right stage
+- DEV_PLAN.md — mark completed; update order/scope if changed
+- HANDOFF.md — regenerate from the current state of the other docs. It is a VIEW,
+  never a source — do not author unique facts into it. Update "where to pick up."
 
-**Step 3 — Claude Code prompt (run after Steps 1 and 2)**
-```
-Three things in sequence — wait for confirmation before each:
+**Step 2 — The project chat updates global memory if needed** (`user_background.md`,
+`feedback_recaps.md`, `working_principles.md`). Consider whether a new cross-project
+category needs its own file.
 
-1. Read docs/SUMMARY.md, LEARNING_PLAN.md, DEV_PLAN.md, and HANDOFF.md.
-   Then run git status and show the diff across all changed docs/ files.
-   Propose a commit message. Do not commit yet.
+**Step 3 — Claude Code reviews + commits** (three-step sequence, diff before each:
+docs/ commit, then project_development_plan.md, then CLAUDE.md), then deletes
+`docs/session_update.md`.
 
-2. After that commit: review project_development_plan.md against the
-   updated docs/ files. Update as needed to reflect anything from this
-   chat's session that Claude Code wasn't aware of. Lean — no narrative.
-   Show diff before committing.
+### Decision Log
 
-3. After that commit: check CLAUDE.md for needed updates based on
-   architecture or workflow changes this session. If none needed, say so
-   explicitly. Show diff before committing if changes exist.
-
-Then delete docs/session_update.md.
-```
-
-> **Note:** `docs/session_update.md` is in `.gitignore` — it is ephemeral
-> and never committed. No separate commit needed to remove it.
+Append-only, inside SUMMARY.md. One greppable line per reversed/notable decision:
+`- YYYY-MM-DD — what · reversed-from (if any) · reason/principle`
+Grep at piece/stage boundaries. Promote to `docs/DECISIONS.md` / ADRs when volume warrants.
 
 ### What this is NOT
-- Not a replacement for real-time notes mid-session — capture decisions
-  as they happen, don't reconstruct at the end
+- Not a replacement for the scratchpad — Tier 1 is where capture happens; Tier 2 routes
 - Not needed for trivial changes (typos, one-line fixes)
-- Not needed if Claude Code already updated files as part of normal workflow
 
 ### Frequency
-- **End of every meaningful session** — even if only SUMMARY.md changes
-- **Immediately** when roadmap order or career framing changes
-- **At every stage completion** — run release workflow first, then doc update
+- **Continuous:** scratchpad append — every notable event, during work
+- **Batch pass:** every piece boundary; immediately on roadmap/career-framing change;
+  at every stage completion (run the release workflow first, then the pass)

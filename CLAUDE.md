@@ -20,8 +20,9 @@ uv sync
 uv run pytest tests/ -v
 ```
 
-Tests live in `tests/test_server.py`. Unit tests cover pure functions and
-require no credentials or network access.
+Tests live in `tests/test_server.py` (tools) and `tests/test_config.py`
+(`ServerConfig.from_env`). Unit tests cover pure functions and require no
+credentials or network access.
 
 ## CI
 
@@ -105,6 +106,30 @@ memory. Update it when:
 Do not modify files in `docs/` unless explicitly asked to do so.
 
 `docs/HANDOFF.md` — paste as the first message when starting a new project chat to restore full context.
+
+## Document ownership
+
+> Authored/ratified by the project chat (the orchestrator); Claude Code applies edits
+> to this section but does not originate them. Canonical location for artifact
+> ownership — do not duplicate elsewhere; other docs reference this table.
+
+| Artifact | Owner | Update trigger |
+|---|---|---|
+| `README.md` | content/voice/narrative → project chat; technical-accuracy flag + git mechanics → Claude Code | staleness hook; stage ships |
+| `CHANGELOG.md` | Claude Code (git-cliff) | stage release |
+| `CLAUDE.md` | Claude Code (except this ownership section → project chat) | arch/workflow change |
+| `project_development_plan.md` | Claude Code (operational memory) | milestone / tool / arch change |
+| `cliff.toml`, `.github/workflows/*`, `.claude/settings.json` | Claude Code | tooling change |
+| `docs/SUMMARY.md`, `LEARNING_PLAN.md`, `DEV_PLAN.md` | project chat | batch doc pass |
+| `docs/HANDOFF.md` | project chat — regenerated VIEW, never authored directly | batch doc pass |
+| `docs/session_update.md` | Claude Code (append-as-you-go scratchpad; gitignored, ephemeral) | continuous |
+| `~/.claude/memory/{user_background,feedback_recaps,working_principles}.md` | project chat | batch doc pass |
+| `~/.claude/memory/MEMORY.md` and `~/.claude/projects/<project>/memory/*` | Claude Code (auto) — do not hand-edit | automatic |
+| `~/.claude/CLAUDE.md` (global) | manual (Art) | as needed |
+
+Principle: settled conventions live in-repo where every actor and Art can see them;
+memory holds only provisional/in-flight facts. Promote a memory-only convention here
+once it's settled.
 
 ## Commit workflow
 
