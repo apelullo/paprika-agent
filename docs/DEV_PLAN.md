@@ -115,6 +115,7 @@ ops awareness — rare for a DS candidate.
 ### Planned work
 - [x] Choose MCP transport — **Streamable HTTP** (SSE deprecated; dropped April 2026)
 - [x] Refactor `server.py` → `server.py` + `paprika_client.py` (Piece 0; 33 tests, CI green)
+- [x] Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
 - [ ] Bind server to LAN IP (not just localhost)
 - [ ] Configure Claude Desktop on primary machine to connect to remote server
 - [ ] Document network configuration and basic security considerations

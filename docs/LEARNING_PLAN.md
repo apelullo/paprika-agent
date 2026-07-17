@@ -175,6 +175,23 @@ service configuration before cloud introduces additional abstraction.
 - [ ] **Factory test fixtures** — mutation-safe shared test data via a fixture factory
   in `tests/conftest.py`; flagged for just before the Stage 2.5 schema change.
 
+### Config & design (Piece 1, 2026-07-16)
+- [x] **Value-authoritative config selection** — unset→default, set→validate, unknown→raise; vs presence-only footgun.
+- [x] **Pure injectable resolver** — `from_env(env: Mapping)`; unit-testable without monkeypatching; extends import/monkeypatch discipline.
+- [x] **Alternative-constructor idiom** — `ServerConfig.from_env` classmethod; free-function equivalent is stylistic.
+- [x] **Config record vs data record** — `ServerConfig` (validated + factory) vs `SyncResult` (pure data); same typed-contract family.
+- [x] **Fail-closed defaults** — `127.0.0.1` over `0.0.0.0`; fail-closed > fail-open.
+- [x] **Configuration vs domain constants** — `config.py` owns environment-varying config; split on cohesion/rule-of-three, not line count.
+- [x] **Functions vs classes ladder** — pure fn → typed record (not state) → stateful class owning invariants → hierarchy/Protocol (rare).
+- [x] **Invest at boundaries, defer internals** — disciplined-investment heuristic.
+
+### Git & parallel-work model (Piece 1, 2026-07-16, via dialogue)
+- [x] **Worktrees vs. `git stash`** — a worktree is a second working directory (isolated
+  checkout over a shared object DB) for concurrent work; stash parks uncommitted changes
+  and re-applies through three-way merge (clobber risk if the base moved). Isomorphic to
+  parallel processes with independent working memory over a shared append-only log — the
+  substrate under Claude Code subagent / parallel-session isolation.
+
 ---
 
 ## Stage 3 — Custom Client

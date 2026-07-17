@@ -617,6 +617,89 @@ created the rooms; logical extraction made state ownership exclusive and enforce
   mode = Shift+Tab ×2 (or `/plan`); read-only enforced at the tool level; approve the
   plan to execute; resets to off on restart.
 
+### 2026-07-16 — Stage 2 Piece 1: Config + Transport Auto-Detection · Doc-Process v2
+
+**Commits:** `35517e5` (Piece 1) · `83e009b` (doc-process v2 install)
+
+#### What was built
+- `config.py` — new third module. Frozen `ServerConfig` dataclass +
+  `ServerConfig.from_env(env: Mapping)`. Value-authoritative transport
+  selection: `MCP_TRANSPORT` unset → stdio; set → validated against
+  `{stdio, streamable-http}`; unknown/empty → `ValueError`. Host/port
+  resolution + validation scoped to the streamable-http branch only;
+  stdio never inspects `MCP_HOST`/`MCP_PORT`. Fail-closed default host
+  `127.0.0.1`. `from_env` reads only the injected mapping, never `os.environ`.
+- `server.py` — reintroduced `import os`; `__main__` resolves
+  `ServerConfig.from_env(os.environ)` (unused until Piece 2 wires transport).
+- `.env.example` — full env-var contract (creds + MCP_* + reserved MCP_API_KEY_*).
+- `.gitignore` — `.env*` + `!.env.example` (fail-safe).
+- `tests/test_config.py` — 12 tests (13 cases; port parametrized x2). Suite 33 → 46.
+- CLAUDE.md — Architecture updated to three modules; ownership matrix added.
+- Doc Update Process v2 installed (SUMMARY + CLAUDE.md ownership section).
+
+#### Concepts learned
+- **Value-authoritative config** — unset→default, set→validate, unknown→raise;
+  beats presence-only, which lets `MCP_TRANSPORT=stdio` silently run HTTP.
+- **Pure injectable resolver** — `from_env(env)` on an injected mapping is
+  unit-testable with plain dicts, no `os.environ` monkeypatching. Extends the
+  refactor's import/monkeypatch discipline.
+- **Alternative-constructor idiom** — `ServerConfig.from_env` classmethod
+  (the `datetime.fromisoformat` family); vs a free function is stylistic only.
+- **Config record vs data record** — `ServerConfig` (validated + factory) and
+  `SyncResult` (pure data) are the same typed-contract-at-a-boundary family,
+  different jobs.
+- **Fail-closed defaults** — `127.0.0.1` over `0.0.0.0`; a misconfigured `.env`
+  fails unreachable, not wide-open.
+- **Configuration vs domain constants** — `config.py` owns what "varies by
+  environment"; domain constants (`PAPRIKA_API`, `MAX_QUERY_LENGTH`) stay by
+  use. Split on cohesion / rule-of-three / import-graph, not line count.
+- **Functions vs classes (the ladder)** — pure fn → typed record at a boundary
+  (NOT a state question) → stateful class owning invariants → hierarchy/Protocol
+  (rarest). Inheritance is the tail, not the dog.
+- **Invest at boundaries, defer internals** — the disciplined-investment tell:
+  hardening a seam others depend on (contract, interface, test seam) vs buffing
+  a cheap-to-change internal.
+- **Worktrees vs. `git stash`** (via dialogue) — a worktree is a second working
+  directory (isolated checkout over a shared object DB) for concurrent work;
+  stash parks uncommitted changes and re-applies through three-way merge (clobber
+  risk if the base moved). Isomorphic to parallel processes with independent
+  working memory over a shared append-only log — the substrate under Claude Code
+  subagent / parallel-session isolation.
+
+#### Design decisions made
+- Transport string `streamable-http` (explicit) over `http` alias.
+- Value-authoritative over presence-only (reversed a locked decision — see Decision Log).
+- Port validation branch-scoped, not global (symmetry with unvalidated host).
+- Resolver in new `config.py`, not `server.py` (reversed locked plan).
+- Doc-process v2: two-tier (continuous typed scratchpad + piece-boundary batch pass).
+- Ownership matrix canonicalized in CLAUDE.md.
+
+#### Process / tooling
+- **"Locked rules" → implementation guidelines** — revisit only on new info or
+  principle conflict; record the reversal + reason (Decision Log is the ledger).
+- **HANDOFF is a derived VIEW** — always regenerated, never authored into directly.
+- **Doc-pass apply mechanic** — splits on the git boundary: the project chat
+  authors; Claude Code applies, apostrophe-greps, and commits in-repo files
+  (apply/verify/commit stay atomic in the repo); either chat writes out-of-repo
+  global memory directly (read-before-write); auto-memory is the memory system's.
+  Canonical in CLAUDE.md `## Document ownership`.
+
+---
+
+## Decision Log
+
+> Append-only. One line per reversed/notable decision:
+> `YYYY-MM-DD — what · reversed-from (if any) · reason/principle`. Grep at piece/stage boundaries.
+
+- 2026-07-16 — `MCP_TRANSPORT` value-authoritative · reversed from locked presence-only · make illegal states unrepresentable
+- 2026-07-16 — `MCP_PORT` validation branch-scoped to streamable-http (not global) · symmetry with unvalidated `MCP_HOST`; "stdio ignores host/port" = not inspected
+- 2026-07-16 — config resolver in new `config.py` · reversed from locked "logic in `server.py`" · separation of concerns + pure-resolver testability
+- 2026-07-16 — transport string `streamable-http` over `http` alias · explicit, consistent naming
+- 2026-07-17 — Doc Update Process v2: two-tier scratchpad + batch · Step 0 generate-at-end kept silently failing · honor capture-as-you-happen via append-as-you-go
+- 2026-07-17 — ownership matrix canonical in CLAUDE.md · was scattered (SUMMARY/memory/CLAUDE) · single in-repo source of truth
+- 2026-07-17 — doc-pass apply mechanics split on the git boundary (three branches) · in-repo → Claude Code applies + apostrophe-greps + commits (atomic where git lives); out-of-repo memory → written directly, no commit; auto-memory → memory system · supersedes the earlier two-branch rule; ownership matrix gains Author/Executor columns
+- 2026-07-17 — global curated memory → joint ownership (project chat + Claude Code) · was project-chat-sole (an artifact of the Filesystem-access framing) · both chats generate user-insight; unversioned-clobber risk handled by read-before-write + additive + batch reconciliation · authorized live in the Claude Code session
+
 ---
 
 ## Open Items & Reminders
@@ -630,7 +713,8 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 - [x] **Stage 2 Piece 0 — refactor complete** (commits `24c9d45` structural split,
   `090c099` Option B); `server.py` = MCP only, `paprika_client` owns sync + cache;
   33 tests, CI green
-- [ ] Begin Stage 2 Piece 1 — `.env` schema + auto-detection logic (transport mode)
+- [x] **Stage 2 Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection** (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
+- [ ] Stage 2 Piece 2 — wire FastMCP Streamable HTTP from config; **research 3.2.4 `run()` API first** (host/port kwargs + transport literal)
 
 ### Stage completion release workflow (manual until Stage 4-5)
 Run this at the end of every stage, before moving to the next:
@@ -710,6 +794,15 @@ adopted; any doc or memory file goes stale.
 (auto-loads every Claude Code session). The project chat authors/ratifies that section;
 Claude Code applies edits but does not originate them. Do not duplicate it here.
 
+**Apply mechanics (git boundary).** Authoring and applying split on where git lives:
+**(1) in-repo** (`docs/`, `CLAUDE.md`, `project_development_plan.md`, code) — the
+project chat authors, Claude Code applies + apostrophe-greps + commits, keeping
+apply/verify/commit atomic in the repo; **(2) out-of-repo global memory**
+(`user_background`, `feedback_recaps`, `working_principles`) — either chat writes
+directly (read-before-write, additive-preferred; no commit), reconciled at the batch
+pass; **(3) auto-memory** (`MEMORY.md`, `projects/<p>/memory/*`) — the memory system's,
+never hand-edited. Rule: whoever commits, applies; the apostrophe grep is the commit gate.
+
 **Step 0 — Consume the scratchpad.** The project chat reads `docs/session_update.md`
 (typed bullets since last pass) + `project_development_plan.md`. If the scratchpad
 is missing or thin (append-as-you-go lapsed), fall back to a since-last-pass log:
@@ -717,8 +810,9 @@ is missing or thin (append-as-you-go lapsed), fall back to a since-last-pass log
 (anchors to the last SUMMARY.md commit = the last pass; if SUMMARY.md is ever
 hand-edited between passes, use an explicit marker instead).
 
-**Step 1 — The project chat updates `docs/`** by routing each bullet per the table, plus
-its own harvested learnings:
+**Step 1 — The project chat authors the `docs/` changes** (Claude Code applies them —
+see Apply mechanics), routing each scratchpad bullet per the table plus its own
+harvested dialogue learnings:
 - SUMMARY.md — session entry (built/learned/decided); update TODOs; append a
   Decision Log line per DECISION
 - LEARNING_PLAN.md — check off completed; file LEARNED concepts to the right stage
@@ -726,19 +820,21 @@ its own harvested learnings:
 - HANDOFF.md — regenerate from the current state of the other docs. It is a VIEW,
   never a source — do not author unique facts into it. Update "where to pick up."
 
-**Step 2 — The project chat updates global memory if needed** (`user_background.md`,
-`feedback_recaps.md`, `working_principles.md`). Consider whether a new cross-project
-category needs its own file.
+**Step 2 — Reconcile global memory.** Either chat may have written `user_background` /
+`feedback_recaps` / `working_principles` during the period (joint ownership,
+read-before-write); at the pass, review for drift and curate. Consider whether a new
+cross-project category needs its own file.
 
-**Step 3 — Claude Code reviews + commits** (three-step sequence, diff before each:
-docs/ commit, then project_development_plan.md, then CLAUDE.md), then deletes
-`docs/session_update.md`.
+**Step 3 — Claude Code applies, verifies, and commits** the authored changes in three
+commits (diff before each: `docs/`, then `project_development_plan.md`, then
+`CLAUDE.md`; apostrophe-grep as the gate), then deletes `docs/session_update.md`.
 
 ### Decision Log
 
-Append-only, inside SUMMARY.md. One greppable line per reversed/notable decision:
-`- YYYY-MM-DD — what · reversed-from (if any) · reason/principle`
-Grep at piece/stage boundaries. Promote to `docs/DECISIONS.md` / ADRs when volume warrants.
+The ledger lives in the `## Decision Log` section above (append-only; format
+`YYYY-MM-DD — what · reversed-from (if any) · reason/principle`). Append one line per
+reversed/notable decision; grep at piece/stage boundaries. Promote to
+`docs/DECISIONS.md` / ADRs when volume warrants.
 
 ### What this is NOT
 - Not a replacement for the scratchpad — Tier 1 is where capture happens; Tier 2 routes
