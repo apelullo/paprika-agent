@@ -38,12 +38,19 @@ uv sync
 
 ### Configure credentials
 
-Create a `.env` file in the repo root:
+Copy the template and fill in your Paprika credentials:
+
+```bash
+cp .env.example .env
+```
 
 ```
 PAPRIKA_EMAIL=your@email.com
 PAPRIKA_PASSWORD=yourpassword
 ```
+
+The optional `MCP_*` variables documented in `.env.example` configure network
+transport (Stage 2, in progress) — ignore them for local use.
 
 ### Connect Claude Desktop
 
@@ -75,8 +82,21 @@ Restart Claude Desktop. The paprika tools will be available in any new chat.
 Paprika Agent is built around a single guiding principle: **every design
 decision should extend naturally, not require replacement as the project grows.**
 
+The server is three modules with enforced boundaries:
+
+- **`server.py`** — the MCP layer and nothing else: the four tool definitions
+  and the entry point. It imports no HTTP library and owns no state.
+- **`config.py`** — environment-driven server configuration. A frozen
+  `ServerConfig` is resolved via `ServerConfig.from_env`: leave `MCP_TRANSPORT`
+  unset for local stdio, or set `streamable-http` for network mode (Stage 2,
+  in progress). Selection is value-authoritative — unknown values fail loudly —
+  and network defaults fail closed (`127.0.0.1`, never `0.0.0.0`). Full
+  contract in `.env.example`.
+- **`paprika_client.py`** — the Paprika API client: authentication, recipe
+  fetching, input validation, sync, and the in-memory cache it exclusively owns.
+
 On first tool call, the server eagerly fetches all recipes from the Paprika
-API and populates two module-level structures: `_recipe_cache` (uid → full
+API and populates two module-level structures in `paprika_client`: `_recipe_cache` (uid → full
 recipe data) and `_name_index` (normalized name → uid). Subsequent calls are
 pure in-memory lookups — zero additional API calls. This cache is the
 foundation all current tools share and the natural predecessor to a persistent
@@ -91,10 +111,13 @@ tool interface, smarter implementation underneath. The architecture doesn't
 change; the sophistication grows inside it.
 
 ## Tech Stack
-Python · FastMCP · uv · Paprika API
+Python · FastMCP · uv · pytest · ruff · GitHub Actions · Paprika API
 
 ## Roadmap
-- [ ] Local network deployment
+- [x] MCP tool suite (v0.1.0)
+- [ ] Local network deployment — *in progress*
+- [ ] Local recipe database (SQLite)
 - [ ] Custom client
-- [ ] Cloud deployment
-- [ ] Recipe recommender system
+- [ ] Semantic search & embeddings
+- [ ] Bayesian recipe recommender
+- [ ] Cloud deployment & MLOps (v1.0.0)

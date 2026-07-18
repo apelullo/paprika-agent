@@ -11,9 +11,9 @@ manager via its unofficial API. Repo: github.com/apelullo/paprika-agent
 **Developer:** Art Pelullo — Senior Data Scientist, 7 yrs Penn Medicine.
 Strong Python/DS fundamentals moving into production software engineering.
 Learns fast conceptually; architecture judgment and scope discipline are
-demonstrated strengths (this session: reversed two locked decisions on
-principle, predicted config.py's growth, reached for the fail-safe gitignore
-unprompted). Underestimates his own output — give calibrated assessments.
+demonstrated strengths (principled reversals of locked decisions, fail-safe
+defaults reached for unprompted). Underestimates his own output — give
+calibrated assessments.
 Building in the open.
 
 **Working style:** Why before how. Succinct, scannable, bold key info, clear
@@ -88,10 +88,23 @@ Piece 1: value-authoritative config, pure injectable resolver, config vs domain
 constants, functions-vs-classes ladder, fail-closed defaults, invest-at-boundaries,
 worktrees vs. git stash.
 
+## Recurring check-ins (every 2-3 sessions)
+
+- Tool/LLM boundary — has it shifted? Any tools that should become LLM
+  reasoning, or reasoning steps that should become tools?
+- Context sizing calibration — is relevance density intuition improving?
+- Architecture check-in — is "extend naturally, not replace" holding?
+- Progress recalibration — honest assessment vs typical developer output
+  (correct for underestimation bias).
+- Scope discipline — are future-stage ideas staying flagged? Is scope widened
+  deliberately + documented rather than drifting?
+
 ## Deferred (flagged — do not implement)
 - Centralize test fixtures (`conftest.py`) — before Stage 2.5
 - `search_recipes` expansion (ingredients/source/NL) — Stage 4
 - SQLite cache; `merge_recipes`; two-way sync — Stage 2.5
+- Auto-sync on client connect (Stage 3); cache/DB warming on startup (Stage 2.5)
+- Windows desktop + RTX 3090 as distributed task-queue compute node (Stage 4/5)
 - `PaprikaClient` class encapsulation — Stage 2.5
 - Semantic search / embeddings / KG — Stage 4
 - AWS EC2 manager + Route 53; MLOps dashboards — Stage 6

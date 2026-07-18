@@ -740,6 +740,8 @@ git push
   Stage 2.5 schema change; mutation-safe shared recipe data, eliminates inline-dict
   duplication across the suite
 - Two-way sync with deletion flag ("safe sync only") — Stage 2.5
+- Auto-sync on client connect (Stage 3); cache/DB warming on startup (Stage 2.5)
+- Windows desktop + RTX 3090 as distributed task-queue compute node (Stage 4/5)
 - `search_recipes` expansion: ingredients, prep, source, nutrition
 - Semantic search / embeddings / knowledge graphs — Stage 4
 - Vision models for image-based ingredient prediction — Stage 6
