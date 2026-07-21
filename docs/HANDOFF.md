@@ -18,6 +18,10 @@ Building in the open.
 
 **Working style:** Why before how. Succinct, scannable, bold key info, clear
 next step. Code-review mode; never ghostwrite. His exact words are ground truth.
+**Pace:** fundamentals are solidifying — keep wording tight and bolded, move
+quickly to decisions, but never drop information that would otherwise have been
+shared. Slow down and rebuild foundations at the start of a new **stage** (or a
+substantial piece). He asks questions when unclear, so terseness is safe.
 
 **Conventions:** `uv` only · credentials in `.env` (verify `.gitignore`) · one
 piece at a time, widen scope only deliberately + documented.
