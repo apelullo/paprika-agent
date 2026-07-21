@@ -31,24 +31,17 @@ GitHub Actions runs the test suite on every push and PR to `master`
 
 ## CI Notes
 
-**Known bug:** PostToolUse Bash matcher hooks do not fire in Claude Code
-v2.1.123+. GitHub issue #55889 was auto-closed as stale on 2026-06-01
-with no fix referenced, and no open successor issue exists as of
-2026-07-16 — the bug is untracked upstream and presumed unfixed. After
-each `git push`, manually poll CI:
+CI status is reported automatically after each `git push` by the
+PostToolUse hook in `.claude/settings.json` — no manual polling needed.
 
-```bash
-gh run list --commit $(git rev-parse HEAD) --repo apelullo/paprika-agent
-```
-
-The hook in `.claude/settings.json` is already configured correctly
-(SHA-based lookup, `hookSpecificOutput` format). The next `git push` is
-the test: if CI status appears automatically without manual polling, the
-bug is fixed — remove this note. If the hook does not fire, search
-anthropics/claude-code for a new open issue analogous to #55889 (e.g.
-`gh search issues --repo anthropics/claude-code "PostToolUse Bash
-matcher" --state open`) and update this note to reference it so the bug
-is tracked explicitly again.
+**Do not put command-content patterns in the hook's `matcher` field.**
+`matcher` filters on *tool name* only (`"Bash"`); content filtering goes
+in the handler's `if` field, which uses permission-rule syntax
+(`"Bash(git push*)"`) and is evaluated against each subcommand, so a
+compound `git add && git commit && git push` matches. A `matcher` of
+`"Bash(*git push*)"` silently never fires — this was misdiagnosed as
+upstream issue #55889 (stale-closed, not planned) from 2026-06-01 until
+2026-07-21. Settings changes take effect without a session restart.
 
 ## Changelog
 
