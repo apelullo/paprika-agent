@@ -7,7 +7,7 @@ default), set → validated and used, unknown → ValueError.
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-VALID_TRANSPORTS = frozenset({"stdio", "streamable-http"})
+VALID_TRANSPORTS = frozenset({"stdio", "http"})
 DEFAULT_HOST = "127.0.0.1"  # fail-closed; set MCP_HOST to a LAN IP per machine
 DEFAULT_PORT = 8000
 
@@ -37,7 +37,7 @@ class ServerConfig:
             # stdio ignores MCP_HOST/MCP_PORT entirely — never inspected.
             return cls(transport="stdio")
 
-        # streamable-http: host/port resolution and validation are scoped
+        # http: host/port resolution and validation are scoped
         # to this branch only.
         host = env.get("MCP_HOST", DEFAULT_HOST)
         port_raw = env.get("MCP_PORT")
@@ -52,4 +52,4 @@ class ServerConfig:
                 ) from None
             if not 1 <= port <= 65535:
                 raise ValueError(f"Invalid MCP_PORT {port}: must be in range 1-65535.")
-        return cls(transport="streamable-http", host=host, port=port)
+        return cls(transport="http", host=host, port=port)

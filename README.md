@@ -88,7 +88,7 @@ The server is three modules with enforced boundaries:
   and the entry point. It imports no HTTP library and owns no state.
 - **`config.py`** — environment-driven server configuration. A frozen
   `ServerConfig` is resolved via `ServerConfig.from_env`: leave `MCP_TRANSPORT`
-  unset for local stdio, or set `streamable-http` for network mode (Stage 2,
+  unset for local stdio, or set `http` for network mode (Stage 2,
   in progress). Selection is value-authoritative — unknown values fail loudly —
   and network defaults fail closed (`127.0.0.1`, never `0.0.0.0`). Full
   contract in `.env.example`.
