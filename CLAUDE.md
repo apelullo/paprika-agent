@@ -43,6 +43,13 @@ compound `git add && git commit && git push` matches. A `matcher` of
 upstream issue #55889 (stale-closed, not planned) from 2026-06-01 until
 2026-07-21. Settings changes take effect without a session restart.
 
+**`if` alone over-fires.** A pattern more specific than a bare command
+name also runs the hook on any command containing `$VAR`, `$()`, or
+backticks (documented conservative fallback). The hook therefore opens
+with a `python3` gate that reads its stdin payload and exits silently
+unless `tool_input.command` really contains `git push`. Keep both: `if`
+is the cheap prefilter, the gate is authoritative.
+
 ## Changelog
 
 Run `uv run git-cliff --output CHANGELOG.md` to regenerate the changelog
