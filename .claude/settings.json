@@ -7,7 +7,7 @@
           {
             "type": "command",
             "if": "Bash(git push*)",
-            "command": "SHA=$(git rev-parse HEAD); WAITED=0; while true; do RUN_ID=$(gh run list --repo apelullo/paprika-agent --commit $SHA --limit 1 --json databaseId --jq '.[0].databaseId'); [ -n \"$RUN_ID\" ] && [ \"$RUN_ID\" != \"null\" ] && break; sleep 3; WAITED=$((WAITED+3)); [ $WAITED -ge 30 ] && exit 0; done; WAITED=0; while [ \"$(gh run view $RUN_ID --repo apelullo/paprika-agent --json status --jq '.status')\" != \"completed\" ] && [ $WAITED -lt 120 ]; do sleep 5; WAITED=$((WAITED+5)); done; gh run view $RUN_ID --repo apelullo/paprika-agent | python3 -c 'import json,sys; print(json.dumps({\"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": sys.stdin.read()}}))'",
+            "command": "python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if \"git push\" in d.get(\"tool_input\",{}).get(\"command\",\"\") else 1)' || exit 0; SHA=$(git rev-parse HEAD); WAITED=0; while true; do RUN_ID=$(gh run list --repo apelullo/paprika-agent --commit $SHA --limit 1 --json databaseId --jq '.[0].databaseId'); [ -n \"$RUN_ID\" ] && [ \"$RUN_ID\" != \"null\" ] && break; sleep 3; WAITED=$((WAITED+3)); [ $WAITED -ge 30 ] && exit 0; done; WAITED=0; while [ \"$(gh run view $RUN_ID --repo apelullo/paprika-agent --json status --jq '.status')\" != \"completed\" ] && [ $WAITED -lt 120 ]; do sleep 5; WAITED=$((WAITED+5)); done; gh run view $RUN_ID --repo apelullo/paprika-agent | python3 -c 'import json,sys; print(json.dumps({\"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": sys.stdin.read()}}))'",
             "timeout": 120,
             "statusMessage": "Watching CI..."
           }
