@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -83,8 +84,26 @@ async def sync_recipes(mode: str = "incremental") -> str:
     )
 
 
+def _run_kwargs(config: ServerConfig) -> dict[str, Any]:
+    """Build keyword arguments for FastMCP's run().
+
+    Host and port are omitted entirely in stdio mode. FastMCP's run()
+    forwards **kwargs to run_stdio_async(), which has no host/port
+    parameters and raises TypeError on unexpected keywords. Omission is
+    required, not stylistic.
+
+    Transport is always passed explicitly rather than left to FastMCP's
+    default, so a stray FASTMCP_TRANSPORT in .env cannot redirect us.
+    """
+    if config.transport == "stdio":
+        return {"transport": "stdio"}
+    return {
+        "transport": config.transport,
+        "host": config.host,
+        "port": config.port,
+    }
+
+
 if __name__ == "__main__":
-    # Resolved now to prove the load_dotenv → from_env path; transport
-    # wiring is Piece 2.
     config = ServerConfig.from_env(os.environ)
-    mcp.run()
+    mcp.run(**_run_kwargs(config))

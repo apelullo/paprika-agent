@@ -1,9 +1,12 @@
 import asyncio
+import inspect
 
 import httpx
 import pytest
+from fastmcp import FastMCP
 
 import paprika_client
+from config import ServerConfig
 from paprika_client import (
     PAPRIKA_API,
     SyncResult,
@@ -11,6 +14,7 @@ from paprika_client import (
     _validate_input_string,
 )
 from server import (
+    _run_kwargs,
     get_recipe,
     list_recipes,
     search_recipes,
@@ -496,3 +500,33 @@ async def test_sync_recipes_formats_full(monkeypatch):
     result = await sync_recipes()
     assert "full refresh" in result
     assert "7 recipes" in result
+
+
+# --- Transport wiring (Piece 2) — none of these start a server ---
+
+
+def test_run_kwargs_stdio_omits_host_and_port():
+    assert _run_kwargs(ServerConfig(transport="stdio")) == {"transport": "stdio"}
+
+
+def test_run_kwargs_http_includes_host_and_port():
+    config = ServerConfig(transport="http", host="127.0.0.1", port=8000)
+    assert _run_kwargs(config) == {
+        "transport": "http",
+        "host": "127.0.0.1",
+        "port": 8000,
+    }
+
+
+def test_http_kwargs_match_fastmcp_signature():
+    # Guards against FastMCP renaming/removing host/port on run_http_async.
+    kwargs = _run_kwargs(ServerConfig(transport="http", host="127.0.0.1", port=8000))
+    kwargs.pop("transport")
+    inspect.signature(FastMCP.run_http_async).bind_partial(None, **kwargs)
+
+
+def test_stdio_signature_has_no_host_param():
+    # Documents why stdio omits host/port rather than passing None.
+    params = inspect.signature(FastMCP.run_stdio_async).parameters
+    assert "host" not in params
+    assert "port" not in params
