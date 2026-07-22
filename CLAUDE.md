@@ -62,7 +62,7 @@ running it before all commits are in tags the wrong commit.
 
 The codebase is three modules:
 
-- `server.py` — MCP layer only: `load_dotenv()`, `mcp = FastMCP("Paprika")`, the four `@mcp.tool()` defs, and the `__main__` entry point (which resolves `ServerConfig.from_env(os.environ)`). Imports `os`, `dotenv`, `fastmcp`, `config`, and `paprika_client` — no `httpx`/`asyncio`, so the MCP layer knows nothing about the Paprika HTTP API.
+- `server.py` — MCP layer only: `load_dotenv()`, `mcp = FastMCP("Paprika")`, the four `@mcp.tool()` defs, the `_run_kwargs(config)` adapter, and the `__main__` entry point (which resolves `ServerConfig.from_env(os.environ)` and calls `mcp.run(**_run_kwargs(config))`). Imports `os`, `typing`, `dotenv`, `fastmcp`, `config`, and `paprika_client` — no `httpx`/`asyncio`, so the MCP layer knows nothing about the Paprika HTTP API. **`_run_kwargs` omits host/port entirely in stdio mode** — `run()` forwards `**kwargs` to `run_stdio_async()`, which raises `TypeError` on unexpected keywords, so omission is required rather than stylistic.
 - `config.py` — env-driven server config: frozen `ServerConfig` dataclass + `ServerConfig.from_env(env)`. Transport selection is value-authoritative (`MCP_TRANSPORT` unset → stdio; set → validated; unknown → `ValueError`). Host/port resolution and validation are scoped to the `http` branch only — stdio never inspects `MCP_HOST`/`MCP_PORT`. `from_env` operates solely on the injected mapping, never `os.environ`. See `.env.example` for the full env-var contract.
 - `paprika_client.py` — the Paprika API client: authentication, the in-memory cache, recipe fetching, input validation, and sync orchestration (`sync()` → `SyncResult`).
 
