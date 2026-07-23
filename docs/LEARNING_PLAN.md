@@ -192,6 +192,33 @@ service configuration before cloud introduces additional abstraction.
   parallel processes with independent working memory over a shared append-only log — the
   substrate under Claude Code subagent / parallel-session isolation.
 
+### Transport wiring & design (Piece 2, 2026-07-22)
+- [x] **Kwargs passthrough is not kwargs filtering** — a framework taking `**kwargs` at
+  one layer and named params at the next has no "ignored when irrelevant" behavior; the
+  caller must branch, and omission (not `None`) is the contract.
+- [x] **Untestable-by-construction code** — logic inside `if __name__ == "__main__":` is
+  never imported, so never tested; extracting it to a module-level function is what makes
+  it assertable.
+- [x] **Signature-guard tests** — `inspect.signature(...).bind_partial(...)` pins a
+  third-party calling convention so a dependency upgrade fails loudly in CI, not silently
+  at deploy; justified by a soft version floor rather than a hard pin.
+- [x] **Framework config shadowing project config** — FastMCP reads the same `.env` with
+  prefix `FASTMCP_`, so `FASTMCP_*` keys become live framework config bypassing the
+  project resolver; pass `transport` explicitly and warn in `.env.example`.
+- [x] **Translator placement at module boundaries** — an adapter speaking a framework's
+  calling convention belongs on that framework's side of the boundary, even when it
+  restates an invariant; local visible duplication beats distributed hidden coupling.
+- [x] **Unit vs. integration (the real line)** — crossing a real I/O boundary (socket,
+  disk, subprocess), not component count; `from_env` → `_run_kwargs` is a wide *unit* test.
+- [x] **Compatibility aliases need existing consumers** — accepting `streamable-http`
+  alongside `http` would add a normalization layer for zero consumers and break the 1:1
+  env-value ↔ `transport` map.
+- [x] **Append-only history vs. regenerated views** — a Decision Log entry for a reversed
+  decision is not edited; the superseding entry is appended. History ≠ view.
+- [x] **Authn ≠ authz ≠ tenancy** — identity, permission, and data partitioning are
+  distinct layers; bearer tokens are a perimeter, not a partition. (Forward beat to Piece 3
+  / Stage 2.5.)
+
 ---
 
 ## Stage 3 — Custom Client
@@ -214,6 +241,9 @@ contract from both sides.
 - [ ] **Context sizing check-in #1** — with a real client sending queries,
   what does actual context usage look like? Is relevance density intuition
   matching observed behavior?
+- [ ] **Integration testing** — subprocess/HTTP-level tests; the test pyramid;
+  marking and separating slow suites (`pytest -m "not integration"`). First
+  concrete use lands in Stage 2 Piece 3 (auth).
 
 ---
 

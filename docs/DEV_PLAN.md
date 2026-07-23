@@ -113,9 +113,10 @@ Deliberately minimal — full service configuration deferred to Stage 6.
 ops awareness — rare for a DS candidate.
 
 ### Planned work
-- [x] Choose MCP transport — **Streamable HTTP** (SSE deprecated; dropped April 2026)
+- [x] Choose MCP transport — **Streamable HTTP**. HTTP+SSE was deprecated by MCP spec 2025-03-26, which introduced Streamable HTTP; the spec still documents SSE backward-compatibility and FastMCP 3.2.4 still accepts `sse`. There is no protocol-wide removal date — 2026 deadlines are vendor-specific (e.g. Keboola 2026-04-01, Atlassian Rovo 2026-06-30). The earlier "dropped April 2026" note conflated a vendor deadline with a protocol removal.
 - [x] Refactor `server.py` → `server.py` + `paprika_client.py` (Piece 0; 33 tests, CI green)
 - [x] Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
+- [x] Piece 2 — transport wiring from config; `_run_kwargs` adapter; suite 46→51; CI green (`3e21a04`, `bd5462e`)
 - [ ] Bind server to LAN IP (not just localhost)
 - [ ] Configure Claude Desktop on primary machine to connect to remote server
 - [ ] Document network configuration and basic security considerations

@@ -686,6 +686,103 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ---
 
+### 2026-07-22 — Stage 2 Piece 2: Transport Wiring
+
+**Commits:** `3e21a04` (rename) · `bd5462e` (wiring) · `b988025` (CLAUDE.md arch) ·
+`3c31c1e` `17e25c3` `b41eea2` (CI-watch hook: never-fired → over-fire → caveat)
+
+#### What was built
+- **Piece 2 — transport wiring.** `_run_kwargs(config)` feeds `mcp.run(**kwargs)`;
+  host/port **omitted** (not `None`) in stdio because `run()` forwards
+  `**transport_kwargs` to `run_stdio_async()`, which has no such params and raises
+  `TypeError` on unexpected keywords. Suite 46→51. `3e21a04` (rename) +
+  `bd5462e` (wiring); CI green.
+- **Transport contract value renamed** `streamable-http` → `http` across
+  `config.py`, `test_config.py`, `.env.example`, `README.md`, `CLAUDE.md`.
+- **CI-watch hook fixed twice** — never-fired (`3c31c1e`): permission-rule syntax
+  sat in `matcher`, which filters tool *name* only; moved to `if`. Over-fire
+  (`17e25c3`): an `if` pattern more specific than a bare command name also fires on
+  any command containing `$VAR`/`$()`/backticks, so it reported stale CI on
+  unrelated commands; added a stdin-payload gate. Caveat documented (`b41eea2`).
+- **CLAUDE.md architecture accuracy** (`b988025`).
+- **HANDOFF pace-preference sync** (`69c47bd`) — working-style/pace guidance
+  synced from `working_principles` memory into the handoff view.
+- **CLAUDE.md CI Notes corrected + upstream comment** (`c9656a9`) — commented on
+  anthropics/claude-code#79616 (same symptom, wrong JSON shape); corrected the
+  in-repo CI Notes to document `matcher` (tool-name only) vs. `if`
+  (permission-rule syntax, evaluated per subcommand).
+
+#### Concepts learned
+- **Kwargs passthrough is not kwargs filtering** — a framework accepting `**kwargs`
+  at one layer and named params at the next has no "ignored when irrelevant"
+  behavior. The caller must branch; omission, not `None`, is the contract.
+- **Untestable-by-construction code** — logic inside `if __name__ == "__main__":`
+  is never imported, therefore never tested. Extracting the branch to a
+  module-level function is what makes it assertable at all.
+- **Signature-guard tests** — `inspect.signature(...).bind_partial(...)` pins a
+  third-party calling convention so a dependency upgrade fails loudly in CI rather
+  than silently at deploy. Justified by the soft floor (`>=3.2.4`), not a hard pin.
+- **Framework config can shadow project config** — FastMCP reads the project's own
+  `.env` with prefix `FASTMCP_` (settings.py:140-141; ENV_FILE at :20), so
+  `FASTMCP_*` keys become live framework config bypassing our resolver. Hence
+  passing `transport` explicitly + the `.env.example` warning.
+- **Translator placement** — an adapter speaking a framework's calling convention
+  belongs on that framework's side of a module boundary, even when it restates an
+  invariant the other side encodes. Local visible duplication beats distributed
+  hidden coupling.
+- **Unit vs. integration** — the line is *crossing a real I/O boundary* (socket,
+  disk, subprocess), not how many components are wired. `from_env` → `_run_kwargs`
+  is a wide *unit* test.
+- **Compatibility aliases need something to be compatible with** — accepting
+  `streamable-http` alongside `http` would add a normalization layer for zero
+  existing consumers and break the 1:1 env-value ↔ `ServerConfig.transport` map.
+- **Append-only ledgers are not stale docs** — a Decision Log entry recording a
+  since-reversed decision must not be edited; the superseding entry is appended.
+  Distinguish *history* (append-only) from *views* (regenerated).
+- **Authentication ≠ authorization ≠ tenancy** — identity, permission, and data
+  partitioning live in different layers. Bearer tokens are a perimeter, not a
+  partition; tenancy needs the principal to reach the data layer and the schema to
+  have somewhere to put it.
+- **A stale-closed upstream issue matching your symptom is weak evidence** —
+  #55889 was misattributed as the cause of the never-firing hook from 2026-06-01
+  to 2026-07-21 (~2 months) purely because the symptom matched. Matching symptoms
+  are not matching causes: verify your own config *first*, then look upstream.
+  Recurred this session — three wrong theories about the Filesystem connector
+  outage, ultimately resolved by direct config inspection (the finding: no
+  standalone `mcpServers` entry; provisioned via `coworkUserFilesPath`).
+
+#### Design decisions made
+- Transport contract value `http`, reversing 2026-07-16 (see Decision Log).
+- `streamable-http` rejected as an alias, not silently accepted.
+- `_run_kwargs` in `server.py`, not `config.py` (see Decision Log).
+- `MCP_` env prefix retained over `FASTMCP_` — `FASTMCP_*` are live framework
+  config in the same `.env`; one owner per variable.
+- Two commits split on "what happened": contract rename vs. wiring.
+- `MCP_HOST` validation + integration tests deferred to Piece 3.
+
+#### Process / tooling
+- **Two-Claude split validated at the plan checkpoint** — plan mode caught a false
+  fact in the chat-authored spec (`settings.transport` defaults to `"stdio"`, not
+  `"http"`, settings.py:257), closed an open flag by source read (banner uses
+  `Console(stderr=True)`, cli.py:246 — cannot corrupt stdio framing), and traced a
+  doc blast radius the spec under-scoped.
+- **Ownership boundary held** — Claude Code edited the three Claude-Code-owned
+  files carrying the old literal, routed the five project-chat-owned occurrences to
+  the scratchpad instead of reaching across.
+- **Filesystem connector outage (EXTERNAL)** — multi-day; discovery succeeded,
+  execution failed with bare `Tool execution failed`, no deny-reason. Servers were
+  provably healthy (`tools/list` handshakes, no `tools/call` ever arriving). Fixed
+  via process kill + cache clear + connector toggle (off, ≥10s, on) in main
+  Settings. **Config finding:** Filesystem has no standalone `mcpServers` entry —
+  provisioned via top-level `coworkUserFilesPath`, so its lifecycle is Cowork's.
+  Root cause not isolated (several variables changed at once).
+- **CHANGELOG.md:67 — leave, do not rewrite.** It asserts the hook fails due to
+  #55889; that was accurate-at-the-time history, corrected chronologically by
+  `3c31c1e` at the next release. Same append-only principle as the Decision Log,
+  recorded here so a future reader doesn't "fix" it.
+
+---
+
 ## Decision Log
 
 > Append-only. One line per reversed/notable decision:
@@ -699,6 +796,8 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 - 2026-07-17 — ownership matrix canonical in CLAUDE.md · was scattered (SUMMARY/memory/CLAUDE) · single in-repo source of truth
 - 2026-07-17 — doc-pass apply mechanics split on the git boundary (three branches) · in-repo → Claude Code applies + apostrophe-greps + commits (atomic where git lives); out-of-repo memory → written directly, no commit; auto-memory → memory system · supersedes the earlier two-branch rule; ownership matrix gains Author/Executor columns
 - 2026-07-17 — global curated memory → joint ownership (project chat + Claude Code) · was project-chat-sole (an artifact of the Filesystem-access framing) · both chats generate user-insight; unversioned-clobber risk handled by read-before-write + additive + batch reconciliation · authorized live in the Claude Code session
+- 2026-07-22 — transport contract value `streamable-http` → `http` · reversed from 2026-07-16 "transport string `streamable-http` over `http` alias" · `http` is FastMCP 3.x's own default for `run_http_async(transport=)` and the spelling its docstrings/CLI use; both literals route identically (transport.py:337), so this is contract clarity, not behavior
+- 2026-07-22 — `_run_kwargs` in `server.py`, not `config.py` nor folded into `from_env` · a translator belongs on the side of the boundary it translates INTO; FastMCP owns `run()`'s signature and `server.py` owns the FastMCP relationship; `config.py` stays framework-free · accepted tradeoff: "host/port only in HTTP mode" now stated twice — local visible duplication over distributed hidden coupling
 
 ---
 
@@ -714,7 +813,10 @@ created the rooms; logical extraction made state ownership exclusive and enforce
   `090c099` Option B); `server.py` = MCP only, `paprika_client` owns sync + cache;
   33 tests, CI green
 - [x] **Stage 2 Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection** (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
-- [ ] Stage 2 Piece 2 — wire FastMCP Streamable HTTP from config; **research 3.2.4 `run()` API first** (host/port kwargs + transport literal)
+- [x] **Stage 2 Piece 2 — transport wiring**; `_run_kwargs` adapter; suite 46→51; CI green (`3e21a04`, `bd5462e`)
+- [ ] Stage 2 Piece 3 — per-device bearer-token auth; `hmac.compare_digest`; 401 on
+  miss. **Carries:** `MCP_HOST` validation + scoped security hardening; first
+  `tests/integration/` suite; earmarked as a hands-on piece.
 
 ### Stage completion release workflow (manual until Stage 4-5)
 Run this at the end of every stage, before moving to the next:
@@ -750,6 +852,33 @@ git push
 - Dataset section in README — add back when analytics features exist
 - Claude memory management MCP server — future project after Paprika +
   Yelp/SAMHSA; sits at intersection of everything learned by then
+- `MCP_HOST` format validation (`ipaddress` stdlib) — Piece 3; currently
+  unvalidated and fails late at uvicorn bind rather than early in the resolver
+- `tests/integration/` — Piece 3, where auth makes real request/response
+  assertions earn their cost; convention `tests/integration/`, marked so
+  `pytest -m "not integration"` keeps the inner loop fast
+- **Multi-account access (Art + wife)** — Stage 2.5, *before schema lock*. Open:
+  separate vs. joint accounts vs. both; credential input mechanism (not `.env`);
+  relation to two-way sync / `merge_recipes`. Requirement undefined — do not design
+  ahead of it. **Only pre-commitment:** include an owner key in the Stage 2.5 schema
+  and cache structure so single-tenant is the one-key case (cheap now, migration later)
+- fastmcp 3.4.4 available (running 3.2.4 via `uv.lock`); signature guards will fail
+  loudly on upgrade
+- `/mcp` default endpoint (settings.py:264) — needed for Piece 7 remote config
+- `docs/DOC_PROCESS.md` — extract Doc Update Process out of SUMMARY (chronological
+  log is not a process home; ownership table already moved to CLAUDE.md)
+- `docs/stages/STAGE_0N.md` — living stage plans, no date suffix; migrate
+  sequence+rationale from the desktop file; repo detail wins where they conflict.
+  Do NOT migrate `paprika_handoff_*` (superseded by HANDOFF.md)
+- `docs/spec/` — transient specs, delete-on-consume; empty folder = boundary
+  processed. Gitignore `docs/spec/*` with `!docs/spec/README.md` as tracked keeper
+- `docs/session/` — two author-scoped scratchpads (`code_session_update.md`,
+  `chat_session_update.md`); one *writer* per file, multiple readers allowed
+- Memory-file ownership: sole author = Claude Code; both chats propose via own
+  scratchpads; new `MEMORY:` type candidate. **Supersedes 2026-07-17 joint
+  ownership** — log at step 2 when implemented, not now
+- Claude Skill packaging the doc-update/sync process — ships ahead of and informs
+  the memory-MCP project; portfolio artifact in its own right
 
 ### Resources to pursue
 - *Designing Data-Intensive Applications* — Kleppmann (systems design)

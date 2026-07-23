@@ -26,31 +26,31 @@ substantial piece). He asks questions when unclear, so terseness is safe.
 **Conventions:** `uv` only · credentials in `.env` (verify `.gitignore`) · one
 piece at a time, widen scope only deliberately + documented.
 
-## Current state — Stage 1 complete; Stage 2 Pieces 0–1 complete; Piece 2 next
+## Current state — Stage 1 complete; Stage 2 Pieces 0–2 complete; Piece 3 next
 
-**Stack:** Python 3.13 · FastMCP (pinned 3.2.4) · httpx · uv · pytest · ruff ·
-pre-commit · GitHub Actions CI · git-cliff
+**Stack:** Python 3.13 · FastMCP 3.2.4 via `uv.lock` (pyproject floor `>=3.2.4`) ·
+httpx · uv · pytest · ruff · pre-commit · GitHub Actions CI · git-cliff
 
 **Architecture — three modules:**
 
 | File | Responsibility |
 |---|---|
-| `server.py` | MCP only. Imports `os`, `dotenv`, `fastmcp`, `config`, `paprika_client` (no `httpx`/`asyncio`). `load_dotenv()`, 4 `@mcp.tool()` defs, `__main__` resolves `ServerConfig.from_env(os.environ)`. |
-| `config.py` | Env-driven config. Frozen `ServerConfig` + `from_env(env)`. Value-authoritative transport (unset→stdio; set→validated; unknown→`ValueError`). Host/port scoped to streamable-http branch; fail-closed `127.0.0.1`. Reads only the injected mapping. |
+| `server.py` | MCP only. Imports `os`, `typing`, `dotenv`, `fastmcp`, `config`, `paprika_client` (no `httpx`/`asyncio`). `load_dotenv()`, 4 `@mcp.tool()` defs, `_run_kwargs(config)` adapter, `__main__` resolves `ServerConfig.from_env(os.environ)` and calls `mcp.run(**_run_kwargs(config))`. |
+| `config.py` | Env-driven config. Frozen `ServerConfig` + `from_env(env)`. Value-authoritative transport (unset→stdio; set→validated; unknown→`ValueError`). Host/port scoped to the `http` branch; fail-closed `127.0.0.1`. Reads only the injected mapping. |
 | `paprika_client.py` | Paprika API + cache. Auth, fetch, validation, `sync()`→`SyncResult`. **Sole mutator of `_cache_populated`.** |
 
 **Shipped tools:** `list_recipes`, `get_recipe`, `search_recipes`, `sync_recipes`.
-**Tests:** 46 (`test_server.py` 33 + `test_config.py` 13). CI green `35517e5`.
+**Tests:** 51. CI green `b41eea2`.
 
 ## Stage 2 — Local Network Deployment (pieces)
 
 - **Piece 0 — Refactor** ✅ (`24c9d45`, `090c099`)
 - **Piece 1 — Config** ✅ (`35517e5`) — value-authoritative `ServerConfig`; branch-scoped port; fail-closed host.
-- **Piece 2 — Transport (NEXT):** wire FastMCP Streamable HTTP from config.
-  ⚠️ **Verify against FastMCP 3.2.4 first** (handoff previously said 2.8.1): whether
-  `mcp.run(transport=, host=, port=)` accepts host/port kwargs, and the transport
-  literal (`streamable-http` vs `http`). Fallback: set host/port via FastMCP settings.
-- **Piece 3 — Auth:** bearer token, per-device keys, `hmac.compare_digest`, 401 on miss.
+- **Piece 2 — Transport** ✅ (`3e21a04`, `bd5462e`) — `_run_kwargs` feeds
+  `mcp.run()`; host/port omitted in stdio; contract value renamed to `http`.
+- **Piece 3 — Auth (NEXT):** bearer token, per-device keys, `hmac.compare_digest`,
+  401 on miss. Carries `MCP_HOST` validation + scoped security hardening, first
+  `tests/integration/` suite; hands-on piece.
 - **Piece 4 — Health:** unauthenticated `GET /health`.
 - **Piece 5 — Tests + CI.**
 - **Piece 6 — MacBook Air:** static IP → `uv sync` → `.env` → `launchd`. ⚠️ launchd doesn't inherit CWD — explicit `load_dotenv()` path.
@@ -64,7 +64,7 @@ deliberately (documented). Full hardening (OAuth 2.1) still Stage 6.
 | Stage | Ver | Description |
 |---|---|---|
 | 1 | v0.1.0 | MCP Tool Suite ✅ |
-| 2 | v0.2.0 | Local Network Deployment (Pieces 0–1 done; Piece 2 next) |
+| 2 | v0.2.0 | Local Network Deployment (Pieces 0–2 done; Piece 3 next) |
 | 2.5 | v0.2.0 | Local DB & Schema — SQLite, dinner history; `merge_recipes` |
 | 3 | v0.3.0 | Custom Client |
 | 4 | v0.4.0 | Semantic Search & Embeddings (pulled forward) |
@@ -82,6 +82,14 @@ appends typed bullets (`SHIPPED/DECISION/LEARNED/EXTERNAL/FLAG`) to gitignored
 pass at each piece boundary**, routing bullets + harvesting its own dialogue
 learnings, then Claude Code reviews + commits. Decision Log lives in SUMMARY.md.
 
+**Planned (not yet implemented):** extract the process into `docs/DOC_PROCESS.md`
+(SUMMARY is a chronological log, not a process home); split the scratchpad into
+author-scoped `docs/session/{code,chat}_session_update.md` (one writer per file);
+add `docs/spec/` for transient delete-on-consume specs (empty folder = boundary
+processed); `docs/stages/STAGE_0N.md` for living stage plans. Memory-file
+ownership moving to sole-author Claude Code (both chats propose via scratchpads),
+superseding the 2026-07-17 joint-ownership decision.
+
 ## Concepts learned (see LEARNING_PLAN.md for full list)
 
 Stage 1: module state, N+1, inverted index, lazy init, DRY, MCP tool anatomy,
@@ -91,6 +99,11 @@ states unrepresentable, typed return contracts, import/monkeypatch discipline.
 Piece 1: value-authoritative config, pure injectable resolver, config vs domain
 constants, functions-vs-classes ladder, fail-closed defaults, invest-at-boundaries,
 worktrees vs. git stash.
+Piece 2: kwargs passthrough vs. filtering, untestable-by-construction `__main__`,
+signature-guard tests, framework config shadowing project config, translator
+placement at module boundaries, unit vs. integration (I/O-boundary criterion),
+compatibility aliases need existing consumers, append-only history vs. regenerated
+views, authn/authz/tenancy as three layers.
 
 ## Recurring check-ins (every 2-3 sessions)
 
@@ -102,6 +115,12 @@ worktrees vs. git stash.
   (correct for underestimation bias).
 - Scope discipline — are future-stage ideas staying flagged? Is scope widened
   deliberately + documented rather than drifting?
+- **Boundary integrity** — are defined boundaries still clean, or has knowledge
+  leaked across them? Audit: `config.py` framework-free? `paprika_client` still
+  sole mutator of `_cache_populated`? `SyncResult` still separating what-happened
+  from how-it's-phrased? Doc ownership matrix honored (no unique facts authored
+  into regenerated views)? A leak is often invisible until named — the itch that
+  something is "off" is the signal to look.
 
 ## Deferred (flagged — do not implement)
 - Centralize test fixtures (`conftest.py`) — before Stage 2.5
@@ -113,6 +132,13 @@ worktrees vs. git stash.
 - Semantic search / embeddings / KG — Stage 4
 - AWS EC2 manager + Route 53; MLOps dashboards — Stage 6
 - Claude memory MCP / persistent-identity layer — after Paprika + Yelp/SAMHSA
+- **Multi-account access (Art + wife)** — Stage 2.5, before schema lock;
+  requirement undefined, do not design ahead. Only pre-commitment: an owner key
+  in the 2.5 schema/cache so single-tenant is the one-key case.
+- `MCP_HOST` format validation (`ipaddress`) + first `tests/integration/` suite —
+  Piece 3
+- fastmcp 3.4.4 available (running 3.2.4 via `uv.lock`); signature guards fail
+  loudly on upgrade. `/mcp` default endpoint — needed for Piece 7.
 
 ## Other projects (context only)
 Job Search (separate project). Yelp/SAMHSA causal-inference pipeline (planned;
