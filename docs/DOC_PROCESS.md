@@ -23,6 +23,12 @@ other's file. If a file does not exist (a prior batch pass consumed it), the fir
 append recreates it — creation is a property of the append. Both are gitignored and
 ephemeral. Format: `- YYYY-MM-DD PREFIX: one line.`
 
+**A scratchpad holds un-routed material only.** Once a bullet reaches its destination
+it leaves the scratchpad — delete-on-consume applies at the bullet level, not just the
+file level. When seeding or retro-seeding, exclude anything already routed in the same
+pass, or the next batch pass will route it twice and duplicate entries in an
+append-only ledger.
+
 | Prefix | Captures | Routes to (at batch pass) |
 |---|---|---|
 | `SHIPPED:` | built / committed | SUMMARY "What was built" |
@@ -55,6 +61,10 @@ Code  reads the spec + both scratchpads + target files
 **Ordering constraint.** Claude Code must not append to its scratchpad between the
 chat's reconciliation and the apply. Entries added in that window roll to the *next*
 pass rather than being silently overwritten by a stale reconciliation.
+
+**Process-change rollout.** A process change installed by a pass cannot govern that
+pass. When a capture rule ships, plan a one-time retro-seed of any scratchpad that was
+ungoverned during it — treat this as part of the rollout, not as a repair.
 
 **Scratchpad vs. spec.** The scratchpad is *raw captured input*; the spec is *routed
 instructions*. Code reads the spec to know what to do, the scratchpads to verify the

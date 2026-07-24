@@ -219,6 +219,34 @@ service configuration before cloud introduces additional abstraction.
   distinct layers; bearer tokens are a perimeter, not a partition. (Forward beat to Piece 3
   / Stage 2.5.)
 
+### Doc-process & collaboration architecture (Step 2, 2026-07-23/24)
+> Process and documentation-architecture concepts (not Python), from turning `docs/`
+> into a lifecycle-by-location staging site and running the process on itself.
+- [x] **Joint authorship is a smell** — separate *proposing* from *authoring*
+  (pull-request shape: anyone proposes, one maintainer merges).
+- [x] **Two-way visibility, one-way write** — visibility enables synthesis; write access
+  creates joint ownership. Conflating them was the error.
+- [x] **Assign authorship by principle, not reachability** — the git boundary is a proxy
+  for one-author, not the rule; name the author where there is no commit.
+- [x] **Structure is justified when ≥2 things of the same kind differ by one attribute** —
+  the discriminator for structure vs. unnecessary complexity.
+- [x] **Migration (and documentation) resurrects corrected errors** — a doc that guards
+  against a string must not contain that string; verify by grep.
+- [x] **A mechanism can exist and still fail on delivery** — actor-agnostic content is not
+  enough if only one actor auto-loads it. Delivery is separate from content.
+- [x] **Text-formatting tools are a hazard for parsed files** — smart-quote substitution
+  (`Filesystem:edit_file`, some editors); verify by hex.
+- [x] **A scratchpad holds un-routed material only** — delete-on-consume at the bullet
+  level; exclude anything already routed in the same pass or it routes twice.
+- [x] **Prose instructions get dropped; spec items must be spec items** — a rule stated in
+  dialogue that never became a numbered item never shipped.
+- [x] **A process change installed by a pass cannot govern that pass** — plan the
+  retro-seed of any ungoverned scratchpad as part of the rollout, not a repair.
+- [x] **"No stale references" targets the exact live path, not the bare string** —
+  verification must not force edits to append-only history it audits.
+- [x] **A pass's full scope is not its commits** — name uncommitted applies (out-of-repo
+  memory, gitignored transients) so the boundary stays auditable.
+
 ---
 
 ## Stage 3 — Custom Client

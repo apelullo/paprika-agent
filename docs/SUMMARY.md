@@ -783,6 +783,84 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ---
 
+### 2026-07-23/24 — Step 2: docs/ Staging Site Reorganization
+
+#### What was built
+- **Staging folders** (`b514720`) — `docs/spec/` + `docs/session/`, gitignored
+  contents with tracked README keepers; `.gitignore` mirrors the
+  `.env*`/`!.env.example` pattern; `git check-ignore` verified both directions before
+  staging so only the keepers land.
+- **DOC_PROCESS.md v3 + STAGE_02.md** (`f460e3d`) — process extracted from SUMMARY
+  (now a one-line pointer); stage plan migrated in-repo as a living doc with three
+  corrections against the desktop source (SSE cutoff, value-authoritative config,
+  status 0–2 done / 3 next) and a repo-wins-on-detail precedence rule.
+- **CLAUDE.md rewrite + HANDOFF v3** (`16f6813`) — matrix rows, proxy-framed executor
+  rule, Scratchpad protocol section, transient-folder carve-out, session-start
+  pointer. Plus the out-of-repo `working_principles.md` apply (executor bullet +
+  `memory` type) — part of the pass, in no commit.
+
+#### Concepts learned
+- **Joint authorship is a smell.** The fix is separating *proposing* from *authoring*
+  — pull-request shape: anyone proposes, one maintainer merges.
+- **Two-way visibility, one-way write.** Visibility enables synthesis; write access
+  creates joint ownership. Conflating them was the error.
+- **Assign authorship by principle, not reachability.** The connector outage would
+  have blocked memory updates under the old "either chat writes" rule, or assigned
+  authorship by accident of availability.
+- **Structure is justified when two or more things of the same kind differ by one
+  attribute** — the discriminator for structure vs. unnecessary complexity. Two
+  scratchpads differing only by author meets it.
+- **Migration resurrects corrected errors — and so can documenting them.** The desktop
+  stage plan carried the SSE claim fixed at `945631b` plus two further stale points;
+  verbatim copy would have re-imported all three. The sharper executor-side sub-case:
+  the first STAGE_02 draft quoted the erroneous strings verbatim *while explaining the
+  fixes*, and the verification grep caught it. **A doc that guards against a string
+  must not contain that string.**
+- **A mechanism can exist and still fail on delivery.** The capture-continuously
+  principle was already actor-agnostic in `working_principles.md`; only Claude Code
+  auto-loads it. The gap was delivery, not content.
+- **Any tool that "helpfully" formats text is a hazard for files that get parsed.**
+  `open -t` dodges smart-quote substitution; same class as `Filesystem:edit_file`
+  converting straight apostrophes to curly. Verify by hex when it matters.
+- **A scratchpad holds un-routed material only.** Seeding or capture must exclude
+  bullets already routed in the same pass, or the next pass routes them twice —
+  duplicate entries in an append-only ledger. Delete-on-consume applies at the bullet
+  level, not just the file level.
+- **An instruction raised in prose rather than written as a numbered spec item gets
+  dropped.** The un-routed-material rule was stated in dialogue, never entered the
+  Step 2 spec, and did not reach DOC_PROCESS.md v3.
+- **A process change installed by a pass cannot govern that pass.** Claude Code worked
+  most of Step 2 under v2 because the scratchpad protocol landed at `16f6813`, the
+  final commit. Expect the first pass under any new capture rule to be partially
+  ungoverned; plan the retro-seed as part of the rollout, not as a repair.
+- **A "no stale references" check must target the exact live path, not the bare
+  string.** Scoping to `docs/session_update.md` gave zero; two historical SUMMARY
+  entries (222, 261) mention the string in append-only history and are protected.
+  Verification must not force edits to the ledger it is auditing.
+- **A pass's full scope is not its commits.** The out-of-repo memory edit and the
+  gitignored chat seed were applied but never staged; reporting only "3 commits" would
+  under-count the work. Name uncommitted applies explicitly so the boundary stays
+  auditable.
+
+#### Process / tooling
+- **v3 doc process is live** — author-scoped scratchpads, transient `docs/spec/`, the
+  empty-folder invariant, and one-author-per-file with the git boundary demoted to a
+  proxy for authorship.
+- **The ritual caught its own gap on first use.** Appending to the chat scratchpad
+  surfaced that the un-routed-material rule never reached DOC_PROCESS.md — the
+  transfer-efficacy check (B3) firing informally on day one, before it was formally
+  scheduled.
+- **The empty-folder invariant worked as designed.** A non-empty `docs/session/` after
+  Step 2 correctly signalled an unprocessed boundary; it was read as a defect before
+  it was read as the signal it is.
+- **Ordering constraint applied for the first time** — Claude Code seeded its
+  scratchpad, then stopped appending until after the apply, so the chat reconciliation
+  saw a stable file.
+- **First spec routed through `docs/spec/`** rather than pasted, closing the
+  copy-paste handoff that `working_principles.md` flags as a cost.
+
+---
+
 ## Decision Log
 
 > Append-only. One line per reversed/notable decision:
@@ -820,6 +898,7 @@ created the rooms; logical extraction made state ownership exclusive and enforce
   33 tests, CI green
 - [x] **Stage 2 Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection** (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
 - [x] **Stage 2 Piece 2 — transport wiring**; `_run_kwargs` adapter; suite 46→51; CI green (`3e21a04`, `bd5462e`)
+- [x] **Step 2 — docs/ staging-site reorganization**; v3 process, author-scoped scratchpads, in-repo living stage plans, one-author memory model (`b514720`, `f460e3d`, `16f6813`)
 - [ ] Stage 2 Piece 3 — per-device bearer-token auth; `hmac.compare_digest`; 401 on
   miss. **Carries:** `MCP_HOST` validation + scoped security hardening; first
   `tests/integration/` suite; earmarked as a hands-on piece.
@@ -871,18 +950,8 @@ git push
 - fastmcp 3.4.4 available (running 3.2.4 via `uv.lock`); signature guards will fail
   loudly on upgrade
 - `/mcp` default endpoint (settings.py:264) — needed for Piece 7 remote config
-- `docs/DOC_PROCESS.md` — extract Doc Update Process out of SUMMARY (chronological
-  log is not a process home; ownership table already moved to CLAUDE.md)
-- `docs/stages/STAGE_0N.md` — living stage plans, no date suffix; migrate
-  sequence+rationale from the desktop file; repo detail wins where they conflict.
-  Do NOT migrate `paprika_handoff_*` (superseded by HANDOFF.md)
-- `docs/spec/` — transient specs, delete-on-consume; empty folder = boundary
-  processed. Gitignore `docs/spec/*` with `!docs/spec/README.md` as tracked keeper
-- `docs/session/` — two author-scoped scratchpads (`code_session_update.md`,
-  `chat_session_update.md`); one *writer* per file, multiple readers allowed
-- Memory-file ownership: sole author = Claude Code; both chats propose via own
-  scratchpads; new `MEMORY:` type candidate. **Supersedes 2026-07-17 joint
-  ownership** — log at step 2 when implemented, not now
+- Backup path for chat-side context — no filesystem access means no `CLAUDE.md` read
+  and no scratchpad write; currently degrades to paste. Revisit when convenient.
 - Claude Skill packaging the doc-update/sync process — ships ahead of and informs
   the memory-MCP project; portfolio artifact in its own right
 

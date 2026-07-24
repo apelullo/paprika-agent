@@ -31,6 +31,9 @@ piece at a time, widen scope only deliberately + documented.
 
 ## Current state — Stage 1 complete; Stage 2 Pieces 0–2 complete; Piece 3 next
 
+> **Step 2 (docs/ staging-site reorganization) complete** — v3 doc process live;
+> author-scoped scratchpads; in-repo living stage plans; one-author memory model.
+
 **Stack:** Python 3.13 · FastMCP 3.2.4 via `uv.lock` (pyproject floor `>=3.2.4`) ·
 httpx · uv · pytest · ruff · pre-commit · GitHub Actions CI · git-cliff
 
@@ -107,6 +110,13 @@ signature-guard tests, framework config shadowing project config, translator
 placement at module boundaries, unit vs. integration (I/O-boundary criterion),
 compatibility aliases need existing consumers, append-only history vs. regenerated
 views, authn/authz/tenancy as three layers.
+Step 2 (doc-process architecture): joint authorship is a smell (separate proposing
+from authoring), two-way visibility one-way write, authorship by principle not
+reachability, structure justified when ≥2 differ by one attribute, migration/docs
+resurrect corrected errors, mechanism-vs-delivery, text-formatters corrupt parsed
+files, scratchpad holds un-routed material only, prose instructions get dropped
+(spec items must be spec items), a process change can't govern its own pass,
+"no stale refs" targets the live path, a pass's scope ≠ its commits.
 
 ## Recurring check-ins (every 2-3 sessions)
 
@@ -142,6 +152,8 @@ views, authn/authz/tenancy as three layers.
   Piece 3
 - fastmcp 3.4.4 available (running 3.2.4 via `uv.lock`); signature guards fail
   loudly on upgrade. `/mcp` default endpoint — needed for Piece 7.
+- Backup path for chat-side context — no filesystem = no `CLAUDE.md` read / no
+  scratchpad write; degrades to paste. Revisit when convenient.
 
 ## Other projects (context only)
 Job Search (separate project). Yelp/SAMHSA causal-inference pipeline (planned;
