@@ -19,8 +19,13 @@ wheels/
 # Unused scaffold
 main.py
 
-# Ephemeral session handoff — never committed
-docs/session_update.md
+# Transient session scratchpads — ignore contents, keep the contract keeper
+docs/session/*
+!docs/session/README.md
+
+# Transient specs — ignore contents, keep the contract keeper
+docs/spec/*
+!docs/spec/README.md
 
 # Assets
 assets/archive/
