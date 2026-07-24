@@ -3,6 +3,9 @@
 > Paste as the first message in the next project chat. This file is a
 > regenerated VIEW of the other docs — never author unique facts into it.
 
+> **Before starting:** read `CLAUDE.md` — it carries the ownership matrix, the
+> scratchpad protocol, and the pointer to `docs/DOC_PROCESS.md`.
+
 ## Project identity
 
 **Paprika Agent** — MCP server connecting Claude Desktop to the Paprika recipe
@@ -75,20 +78,20 @@ deliberately (documented). Full hardening (OAuth 2.1) still Stage 6.
 
 ## Documentation system
 
-Ownership matrix is canonical in **CLAUDE.md** (`## Document ownership`).
-Doc Update Process (v2) is in `docs/SUMMARY.md`: **two-tier** — Claude Code
-appends typed bullets (`SHIPPED/DECISION/LEARNED/EXTERNAL/FLAG`) to gitignored
-`docs/session_update.md` as-they-happen; the project chat runs a full **batch
-pass at each piece boundary**, routing bullets + harvesting its own dialogue
-learnings, then Claude Code reviews + commits. Decision Log lives in SUMMARY.md.
+Ownership matrix is canonical in **CLAUDE.md** (`## Document ownership`); the full
+process is **`docs/DOC_PROCESS.md`** (v3). `docs/` is a **staging site — lifecycle by
+location**: transient folders `docs/session/` (author-scoped scratchpads
+`code_`/`chat_session_update.md`, one writer each) and `docs/spec/` (delete-on-consume
+piece specs) are gitignored with tracked README keepers — an empty folder means
+"boundary processed". Persistent docs (`SUMMARY`, `LEARNING_PLAN`, `DEV_PLAN`,
+`stages/STAGE_0N.md`, `DOC_PROCESS`) are versioned.
 
-**Planned (not yet implemented):** extract the process into `docs/DOC_PROCESS.md`
-(SUMMARY is a chronological log, not a process home); split the scratchpad into
-author-scoped `docs/session/{code,chat}_session_update.md` (one writer per file);
-add `docs/spec/` for transient delete-on-consume specs (empty folder = boundary
-processed); `docs/stages/STAGE_0N.md` for living stage plans. Memory-file
-ownership moving to sole-author Claude Code (both chats propose via scratchpads),
-superseding the 2026-07-17 joint-ownership decision.
+**Flow:** both actors append typed bullets (`SHIPPED/DECISION/LEARNED/EXTERNAL/FLAG/
+MEMORY`) to their own scratchpad as-they-happen; at each piece boundary the project
+chat reconciles + authors a spec → `docs/spec/`, Claude Code applies + apostrophe-greps
++ commits, then deletes the consumed spec + both scratchpads. Memory files are
+**Claude-Code-authored** (both actors propose via scratchpads) — superseding the
+2026-07-17 joint-ownership decision. Decision Log lives in SUMMARY.md.
 
 ## Concepts learned (see LEARNING_PLAN.md for full list)
 

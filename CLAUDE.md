@@ -1,6 +1,9 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file is the shared conventions reference for both actors working on this
+repository — Claude Code (claude.ai/code) and the project chat. It carries the
+ownership matrix, the scratchpad protocol, and the pointer to the full doc process
+(`docs/DOC_PROCESS.md`). Read it at session start.
 
 ## Running the server
 
@@ -102,8 +105,14 @@ memory. Update it when:
 - `docs/SUMMARY.md` — chronological learning and development log
 - `docs/LEARNING_PLAN.md` — sequenced learning goals by stage
 - `docs/DEV_PLAN.md` — sequenced feature roadmap by stage
+- `docs/DOC_PROCESS.md` — the doc update process (single source of truth)
+- `docs/stages/STAGE_0N.md` — living per-stage implementation plans
+- `docs/session/` — author-scoped scratchpads (transient, gitignored)
+- `docs/spec/` — transient piece specs (delete-on-consume, gitignored)
 
-Do not modify files in `docs/` unless explicitly asked to do so.
+Do not modify files in `docs/` unless explicitly asked — this protects chat-authored
+documents. The transient folders `docs/session/` and `docs/spec/` are exempt: they are
+gitignored, single-author by the matrix, and continuous modification is their purpose.
 
 `docs/HANDOFF.md` — paste as the first message when starting a new project chat to restore full context.
 
@@ -122,20 +131,36 @@ Do not modify files in `docs/` unless explicitly asked to do so.
 | `cliff.toml`, `.github/workflows/*`, `.claude/settings.json` | Claude Code | Claude Code | tooling change |
 | `docs/SUMMARY.md`, `LEARNING_PLAN.md`, `DEV_PLAN.md` | project chat | Claude Code | batch pass |
 | `docs/HANDOFF.md` | project chat (regenerated VIEW) | Claude Code | batch pass |
-| `docs/session_update.md` | Claude Code (scratchpad) | Claude Code | continuous |
-| `~/.claude/memory/{user_background,feedback_recaps,working_principles}.md` | project chat + Claude Code (joint) | whoever's in-session writes directly (read-before-write; no commit) | on insight; reconciled at batch pass |
+| `docs/DOC_PROCESS.md` | project chat | Claude Code | process change |
+| `docs/stages/STAGE_0N.md` | project chat | Claude Code | stage start |
+| `docs/session/code_session_update.md` | Claude Code (sole) | Claude Code | continuous |
+| `docs/session/chat_session_update.md` | project chat (sole) | chat writes; Code deletes at pass | continuous |
+| `docs/spec/*` | project chat (sole) | Code consumes + deletes | piece boundary |
+| `~/.claude/memory/{user_background,feedback_recaps,working_principles}.md` | **Claude Code (sole)** — both actors propose via their own scratchpads | Claude Code | batch pass |
 | `~/.claude/memory/MEMORY.md`, `projects/<p>/memory/*` | Claude Code (auto) | memory system (not hand-edited) | automatic |
 | `~/.claude/CLAUDE.md` (global) | Art | Art | as needed |
 
-> **Executor rule (git boundary, three branches):** in-repo ⇒ Claude Code applies +
-> apostrophe-greps + commits (atomic where git lives); out-of-repo global memory ⇒
-> either chat writes directly (read-before-write, additive-preferred; no commit),
-> reconciled at the batch pass; auto-memory ⇒ the memory system. The Executor column
-> must obey this rule — that's the audit.
+> **Executor rule.** Every artifact has exactly one author, assigned by principle. The
+> git boundary is a *proxy* for this: in-repo ⇒ Claude Code applies + apostrophe-greps
+> + commits, keeping apply/verify/commit atomic where git lives. Where there is no
+> commit (out-of-repo memory, gitignored transients), the proxy does not bind and the
+> author is named explicitly — memory files are Claude Code's, with both actors
+> proposing via their own scratchpads. Auto-memory remains the memory system's.
+> **Two-way visibility, one-way write:** each actor reads the other's scratchpad;
+> neither writes to it. The Executor column must obey this rule — that's the audit.
 
-Principle: settled conventions live in-repo where every actor and Art can see them;
-memory holds only provisional/in-flight facts. Promote a memory-only convention here
-once it's settled.
+Principle: settled *project* conventions live in-repo where every actor and Art can
+see them; memory holds *cross-project* principles (settled but repo-agnostic — a
+single repo cannot be the source for a convention that outlives it) plus
+provisional/in-flight facts. Promote a settled project convention from memory into
+this file; keep trans-project principles in memory.
+
+## Scratchpad protocol
+
+Both actors append dated typed bullets to their own file in `docs/session/` as work
+happens (`SHIPPED` / `DECISION` / `LEARNED` / `EXTERNAL` / `FLAG` / `MEMORY`). Neither
+edits the other's file. Full process: `docs/DOC_PROCESS.md` — read at session start
+(this file) and at the batch pass (that file).
 
 ## Commit workflow
 
