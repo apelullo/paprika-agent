@@ -247,6 +247,29 @@ service configuration before cloud introduces additional abstraction.
 - [x] **A pass's full scope is not its commits** — name uncommitted applies (out-of-repo
   memory, gitignored transients) so the boundary stays auditable.
 
+### Piece 3 design + process v4 (pass 20260922)
+- [x] **Toolset namespace collision** — same absolute paths on two machines;
+  `create_file` succeeded on the wrong one; file ops on Art's machine go through
+  `Filesystem:*`, verified by a listing.
+- [x] **Three layers in FastMCP auth** — MCP-message `Middleware` (wrong layer), ASGI
+  `RequireAuthMiddleware` (the framework's interceptor), `TokenVerifier` (our policy).
+- [x] **Custom routes bypass auth by construction** — only the MCP route is wrapped;
+  `/health` needs a guard test, not a comment.
+- [x] **`StaticTokenVerifier` is not the seam** — a dict lookup, self-documented as
+  not for production; subclass `TokenVerifier`.
+- [x] **Composition root** — a factory registers plain tool functions at construction;
+  constructor injection beats mutating a public attribute.
+- [x] **The in-process client cannot test HTTP auth** — drive the real ASGI app; the
+  401 path needs no lifespan, the success path does.
+- [x] **Four copies of a living list is worse than none** — deferred items lived in
+  four docs; a register is the fix.
+- [x] **Import mechanisms, not ceremony** — each imported step names the failure it
+  prevents here.
+- [x] **Split types on the axis that changes the write action** — vetting, not
+  target, changed the sink and the write.
+- [x] **Register vs temporary file** — rows close in a register; files close in
+  `_auxiliary/`.
+
 ---
 
 ## Stage 4 — Custom Client

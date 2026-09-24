@@ -861,6 +861,114 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ---
 
+### 2026-09-22/23 — Pass 20260922: Doc Process v4 and Piece 3 Design
+
+**Commits:** `4e16d35` → `240d300` (C1-C8) · this routing commit (C9) · project-plan
+update (C10)
+
+#### What was built
+Doc process v4, installed as Pass A. Stages renumbered 1-7 with one version tag per
+stage (`4e16d35`). The Decision Log moved to a root `DECISIONS.md` ledger, which gained
+32 lines from this pass (`9ccd3a1`). Lifecycle folders `docs/_archive/`,
+`docs/_inbox/`, `docs/_auxiliary/`, and `docs/registers/` added with README keepers and
+gitignore rules (`8fa814c`). Deferred items from five documents consolidated into
+`docs/registers/deferred.md` (26 rows), with `docs/registers/open_questions.md` (4) and
+`docs/_auxiliary/ideas_20260922.md` (7) (`1867395`). `docs/DOC_PROCESS.md` replaced by
+`docs/SOP.md` (`c57b6aa`). CLAUDE.md gained the session-start block, the file-class
+table, and the v4 ownership matrix (`ea01cf6`). STAGE_02 folded Pieces 4 and 5 into
+Piece 3 (3a auth, 3b health, 3c CI gate) with the `TokenVerifier` extension point and
+the `MCP_HOST` rule (`68ea72e`). `docs/HANDOFF.md` retired and the Piece 3 design
+proposal seeded in `docs/_auxiliary/` (`240d300`).
+
+#### Design decisions made
+> One line each, in ledger order; full lines in [DECISIONS.md](../DECISIONS.md).
+- (2026-08-01) Claude Code's scratchpad exempt from show-diff-and-await-approval (Art)
+- Stages renumbered 1-7 (2.5 becomes 3; later stages move up one)
+- One stage, one version tag (v0.2.0 is Stage 2 alone)
+- Pieces 4 (health) and 5 (tests + CI gate) fold into Piece 3
+- `MCP_HOST` validation stays in Piece 3 as its own commit
+- Piece 3 extension point is a `TokenVerifier` subclass, not middleware
+- New fourth module `auth.py`
+- `ServerConfig.api_keys: tuple[DeviceKey, ...]`, http-branch scoped; token `repr=False`;
+  bytes encoding in `auth.py`
+- `create_server(config)` factory, as a structural commit before auth
+- Zero API keys in http mode raises `ValueError`
+- Empty device suffix, empty token, or duplicate token raises `ValueError`; no minimum
+  length
+- `/health` bypass locked by a guard test, not a code comment
+- pytest markers `integration` (runs in CI) and `live` (excluded via `-m "not live"`)
+- Auth HTTP tests via Starlette's `TestClient` with `json_response=True`; no new
+  dev dependency
+- Doc process v4: archive replaces delete-on-consume; `_inbox/` carryovers;
+  `_auxiliary/` temporary files
+- Pass identity: START date `YYYYMMDD` plus `_pN`
+- `DOC_PROCESS.md` becomes `SOP.md`; CLAUDE.md opens with a session-start block;
+  one-line seed prompt
+- `DECISIONS.md` at repo root is the decision ledger
+- `HANDOFF.md` retired (condition: measure the opening read at Pass B's start)
+- Scratchpad types v4: `DEFERRED:` added; `FLAG:` narrowed to the other actor's call
+- Capture floor ratified: capture if it would change a decision or be lost otherwise
+- The v3 ordering contradiction resolves by a `## Post-reconciliation` section
+- Cross-reference discrepancies go to the commit message body
+- Chat-side backup read path is `secure-shell`, read-only set only
+- No hard cap on session-start/close step counts
+- Process revamp is Pass A; Piece 3 is Pass B in a new chat
+- Transient naming: `<actor>_scratchpad_<pass>.md`, `spec_<subject>_<pass>.md`,
+  `carryover_<pass>.md`
+- (2026-09-23) Registers at `docs/registers/`; `_archive/`, `_inbox/`, `_auxiliary/`
+  under `docs/`
+- (2026-09-23) Ledger file name `DECISIONS.md`
+- (2026-09-23) `IDEA:` distinct from `DEFERRED:`; the axis is vetting
+- (2026-09-23) `MCP_HOST` accepts IP literals only; `0.0.0.0` and `::` rejected
+- (2026-09-23) A pass resumes in the same chat and the same Claude Code session until
+  closed
+
+#### Concepts learned
+- **Toolset namespace collision** (2026-07-24) — two toolsets with overlapping
+  semantics and identical absolute paths collide. The Step 2 spec was written with
+  `create_file` (Claude's container) instead of `Filesystem:write_file` (Art's
+  machine); it succeeded on the wrong machine and reported success, a true and useless
+  result. Every file operation on Art's machine goes through `Filesystem:*`, verified
+  by a follow-up listing rather than the write's return value.
+- **Three layers in FastMCP auth** — `Middleware` (MCP-message layer, wrong for
+  headers); `RequireAuthMiddleware` + `AuthenticationMiddleware` (ASGI,
+  framework-supplied, the right layer); `TokenVerifier` (the policy the middleware
+  calls). We write the policy; the framework supplies the interceptor.
+- **Custom routes sit outside auth** — `create_streamable_http_app` wraps only the MCP
+  route in `RequireAuthMiddleware`; `custom_route`s are added outside it, so `/health`
+  is unauthenticated by construction and "explicit, not accidental" needs a guard test.
+- **`StaticTokenVerifier` is not the seam** — it does a dict lookup and
+  self-documents as not for production; subclassing `TokenVerifier` is the right seam.
+- **Composition root** — a factory makes tool functions plain and registers them at
+  construction; constructor injection beats post-construction mutation of a public
+  attribute even when the framework reads it lazily.
+- **The in-process client cannot test HTTP auth** — `fastmcp.Client` bypasses HTTP;
+  the test must drive the real ASGI app; the 401 path needs no lifespan, the success
+  path does.
+- **Four copies of a living list is worse than none** — "deferred items live only in
+  HANDOFF" was the wrong diagnosis; they lived in four places (SUMMARY, DEV_PLAN,
+  STAGE_02, HANDOFF). A register is the fix; the instinct was right.
+- **Import mechanisms, not ceremony** — from a sibling project, import mechanisms;
+  the test for each imported step is the failure it prevents here.
+- **Split types on the axis that changes the write action** (2026-09-23) — not on the
+  most visible attribute; Art found the vetting axis where the chat had split on
+  target.
+- **Deferred vs ideas maps to register vs temporary file** (2026-09-23) — rows close
+  in a register; files close in `_auxiliary/`.
+
+#### Process / tooling
+- **Upstream issue resolved** (2026-07-24) — the comment on
+  anthropics/claude-code#79616 (CI-watch hook, wrong JSON shape; the comment itself is
+  recorded under 2026-07-22) resolved the issue upstream. Art's first public GitHub
+  interaction; a candidate for the blog/LinkedIn build narrative.
+- **MCP timeouts** (2026-09-23) — `Filesystem` and `secure-shell` calls timed out at
+  4 minutes each (three calls, about 18:30-18:45 EDT) after working earlier. Two
+  servers failing identically pointed at the Desktop app; the chat reported and
+  stopped rather than writing the spec from recall. Both recovered after Art checked
+  the app.
+
+---
+
 ## Decision Log
 
 Moved to [DECISIONS.md](../DECISIONS.md) on 2026-09-22 (pass 20260922).
