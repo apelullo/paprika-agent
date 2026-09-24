@@ -18,12 +18,12 @@
 - PostToolUse hook: poll loop CI status reporter after git push
 - MIT license
 - `git-cliff` / CHANGELOG — automated changelog from conventional commits
-- Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 6)
+- Version tag map established: v0.1.0 (Stage 1) → v1.0.0 (Stage 7)
 - README: Features, Quick Start, Architecture, Tech Stack, Roadmap sections
 - Tool input validation — `_validate_input_string` helper + `MAX_QUERY_LENGTH` constant; raises `ValueError` with tool/param context for empty or oversized inputs
 - `sync_recipes` — incremental (hash diff) + full refresh modes; `_cache_populated` flag fixes zero-recipe account re-fetch bug
 - `sync_recipes` test suite — 10 tests covering cold cache, incremental add/edit/unchanged/delete/rename, full refresh, zero-recipe full refresh, flag reset regression, and invalid mode validation
-- `search_recipes` empty-results message — scope hint on no match; expansion deferred to Stage 4
+- `search_recipes` empty-results message — scope hint on no match; expansion deferred to Stage 5
 - `assets/` directory structure — `demos/stage_01/`, `images/`, `archive/` (gitignored); `*.mov` ignored
 - README: Demo section — MP4 via GitHub user-attachments CDN
 - v0.1.0 tagged and released — https://github.com/apelullo/paprika-agent/releases/tag/v0.1.0
@@ -41,14 +41,14 @@
 ## Stage roadmap
 1. **MCP Tool Suite** ✅ COMPLETE — v0.1.0
 2. **Local Network Deployment** — Streamable HTTP transport, per-device bearer-token auth, `GET /health`, LAN IP bind, `launchd` always-on service; `server.py` split done (Piece 0)
-2.5. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag; `merge_recipes` tool — two-account merge (e.g. personal + spouse's account) with conflict resolution strategies: keep both, last-write-wins via timestamp, or manual override
-3. **Custom Client** (compressed) — minimal Python script connecting to Stage 2 server; understand protocol from both sides
-4. **Semantic Search & Embeddings** — sentence-transformers, FAISS, hybrid search, embedding storage in Stage 2.5 DB
-5. **Recipe Recommender** — Bayesian preference model on 365+ day dinner history, temporal modeling, `recommend_recipes` tool, analytics dashboard
-6. **Cloud, App & MLOps** — AWS/EC2, Docker, CD pipeline, Postgres migration, pgvector, full frontend, full CLI, observability
+3. **Local Database & Schema** — SQLite persistent cache, dinner history table, dbt basics, incremental sync, deletion protection flag; `merge_recipes` tool — two-account merge (e.g. personal + spouse's account) with conflict resolution strategies: keep both, last-write-wins via timestamp, or manual override
+4. **Custom Client** (compressed) — minimal Python script connecting to Stage 2 server; understand protocol from both sides
+5. **Semantic Search & Embeddings** — sentence-transformers, FAISS, hybrid search, embedding storage in Stage 3 DB
+6. **Recipe Recommender** — Bayesian preference model on 365+ day dinner history, temporal modeling, `recommend_recipes` tool, analytics dashboard
+7. **Cloud, App & MLOps** — AWS/EC2, Docker, CD pipeline, Postgres migration, pgvector, full frontend, full CLI, observability
 
 ## Future ideas (no stage assigned)
-- **Account similarity metric** — aggregate a distance/similarity score across two Paprika accounts (ingredient overlap, cuisine distribution, semantic similarity of recipe content); natural input to Stage 5 recommender for cross-account suggestions (e.g. "recipes your wife has that you'd probably enjoy")
+- **Account similarity metric** — aggregate a distance/similarity score across two Paprika accounts (ingredient overlap, cuisine distribution, semantic similarity of recipe content); natural input to Stage 6 recommender for cross-account suggestions (e.g. "recipes your wife has that you'd probably enjoy")
 
 ## Deferred tests
 - `get_token` bad response format — test the `raise ValueError(f"Unexpected login response: {body}")` branch
@@ -60,6 +60,6 @@
 
 ## Tooling roadmap
 - **mypy or Pyright** — trigger met (2026-06-25: `paprika_client.py` added; cross-module calls); revisit adding static type-checking
-- **sentence-transformers + FAISS** — trigger: Stage 4 begins
-- **SQLAlchemy or raw sqlite3** — trigger: Stage 2.5 begins (discuss ORM vs. raw SQL then)
-- **git-cliff CI automation** — trigger: Stage 4-5; add tag-triggered changelog regeneration to `ci.yml`
+- **sentence-transformers + FAISS** — trigger: Stage 5 begins
+- **SQLAlchemy or raw sqlite3** — trigger: Stage 3 begins (discuss ORM vs. raw SQL then)
+- **git-cliff CI automation** — trigger: Stage 5-6; add tag-triggered changelog regeneration to `ci.yml`

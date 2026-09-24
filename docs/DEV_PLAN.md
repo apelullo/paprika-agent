@@ -25,17 +25,18 @@
 
 Each stage completion gets a version tag. Tags drive the changelog — git-cliff
 groups commits between tags into named releases rather than one `[Unreleased]`
-bucket. Run `git-cliff` manually after tagging until Stage 4-5, when CI
+bucket. Run `git-cliff` manually after tagging until Stage 5-6, when CI
 automation of changelog generation on tag push becomes worth the overhead.
 
 | Version | Stage | Description |
 |---|---|---|
 | `v0.1.0` | Stage 1 | MCP tool suite complete — four tools, CI, tested, documented, demo video |
-| `v0.2.0` | Stage 2 + 2.5 | Local network deployment + SQLite DB + schema |
-| `v0.3.0` | Stage 3 | Custom client — minimal Python client connecting to network server |
-| `v0.4.0` | Stage 4 | Semantic search + embeddings — natural language recipe queries |
-| `v0.5.0` | Stage 5 | Recipe recommender + Bayesian inference |
-| `v1.0.0` | Stage 6 | Cloud deployment + standalone app + MLOps |
+| `v0.2.0` | Stage 2 | Local network deployment |
+| `v0.3.0` | Stage 3 | SQLite DB + schema |
+| `v0.4.0` | Stage 4 | Custom client — minimal Python client connecting to network server |
+| `v0.5.0` | Stage 5 | Semantic search + embeddings — natural language recipe queries |
+| `v0.6.0` | Stage 6 | Recipe recommender + Bayesian inference |
+| `v1.0.0` | Stage 7 | Cloud deployment + standalone app + MLOps |
 
 **To tag a release:**
 ```bash
@@ -46,7 +47,7 @@ git add CHANGELOG.md && git commit -m "chore: update changelog for v0.1.0"
 git push
 ```
 
-**CI automation trigger (add at Stage 4-5):**
+**CI automation trigger (add at Stage 5-6):**
 ```yaml
 on:
   push:
@@ -88,7 +89,7 @@ discipline, CI/CD — strong engineering foundation.
   `_cache_populated` flag fixes zero-recipe re-fetch bug; full refresh
   no-op bug caught and fixed; 10 new tests (suite: 20 → 30)
 - [x] `search_recipes` empty-results message — honest scope hint on no match;
-  expansion deferred to Stage 4 semantic search
+  expansion deferred to Stage 5 semantic search
 - [x] README: Demo section — MP4 via GitHub user-attachments CDN
 - [x] `assets/` directory structure — zero-padded stage folders, archive gitignored
 - [x] v0.1.0 tagged and released
@@ -96,19 +97,19 @@ discipline, CI/CD — strong engineering foundation.
 ### Stage 2 next
 
 ### Deferred (flagged for later stages)
-- Local SQLite persistent cache — Stage 2.5
-- Two-way sync with deletion protection flag — Stage 2.5-3
-- Semantic search / embeddings — Stage 4
-- Nutrition calculation tool — Stage 4-5
+- Local SQLite persistent cache — Stage 3
+- Two-way sync with deletion protection flag — Stage 3-4
+- Semantic search / embeddings — Stage 5
+- Nutrition calculation tool — Stage 5-6
 
 ---
 
-## Stage 2 — Local Network Deployment (Compressed)
+## Stage 2 — Local Network Deployment
 
-**Target tag: combined with Stage 2.5 → `v0.2.0`**
+**Target tag: `v0.2.0`**
 **Goal:** Move the MCP server to a second machine on the local network.
 First separation of client and server into distinct physical hosts.
-Deliberately minimal — full service configuration deferred to Stage 6.
+Deliberately minimal — full service configuration deferred to Stage 7.
 **Portfolio signal:** Networking fundamentals, service configuration,
 ops awareness — rare for a DS candidate.
 
@@ -124,10 +125,10 @@ ops awareness — rare for a DS candidate.
 ### Scope decisions (2026-06-25 — deliberate, documented)
 - **`launchd` service setup pulled forward into Stage 2** (Piece 6). An always-on
   server that survives reboot is the real Stage 2 deliverable; without it the server
-  is "run manually," not deployed. *Full* service hardening still deferred to Stage 6.
+  is "run manually," not deployed. *Full* service hardening still deferred to Stage 7.
 - **Per-device bearer-token auth added in Stage 2** (Piece 3). *Full* auth hardening
-  (OAuth 2.1) still deferred to Stage 6.
-- **`server.py` split pulled forward from Stage 2.5 into Piece 0** — done (commits
+  (OAuth 2.1) still deferred to Stage 7.
+- **`server.py` split pulled forward from Stage 3 into Piece 0** — done (commits
   `24c9d45`, `090c099`); cleaner MCP-only surface before Stage 2's MCP-side additions.
 - **Health endpoint (`GET /health`) added in Stage 2** (Piece 4) — unauthenticated;
   isolates failure layers during network debugging.
@@ -138,9 +139,9 @@ ops awareness — rare for a DS candidate.
 
 ---
 
-## Stage 2.5 — Local Database & Schema (NEW)
+## Stage 3 — Local Database & Schema
 
-**Target tag: combined with Stage 2 → `v0.2.0`**
+**Target tag: `v0.3.0`**
 **Goal:** Design and implement a local SQLite database for persistent
 recipe storage and dinner history. The real prerequisite for all ML
 features — queryable, structured data that survives server restarts.
@@ -177,9 +178,9 @@ roles.
 
 ---
 
-## Stage 3 — Custom Client (Compressed)
+## Stage 4 — Custom Client
 
-**Target tag: `v0.3.0`**
+**Target tag: `v0.4.0`**
 **Goal:** Build a minimal Python client that connects to the MCP server
 programmatically without Claude Desktop. One focused session.
 **Portfolio signal:** Protocol understanding, client/server architecture.
@@ -192,15 +193,15 @@ programmatically without Claude Desktop. One focused session.
 - [ ] Auth handling from client side
 - [ ] Config: server address from env or CLI flag
 
-### Deliberately deferred from original Stage 3
-- Full CLI with `typer`/`argparse` — revisit at Stage 5
-- `pydantic-settings` config management — revisit at Stage 5
+### Deliberately deferred from original Stage 4
+- Full CLI with `typer`/`argparse` — revisit at Stage 6
+- `pydantic-settings` config management — revisit at Stage 6
 
 ---
 
-## Stage 4 — Semantic Search & Embeddings (PULLED FORWARD)
+## Stage 5 — Semantic Search & Embeddings (PULLED FORWARD)
 
-**Target tag: `v0.4.0`**
+**Target tag: `v0.5.0`**
 **Goal:** Implement embedding-based semantic search over recipes.
 Runs entirely locally. No cloud required.
 **Portfolio signal:** Applied NLP, vector search, production ML thinking —
@@ -210,10 +211,10 @@ core AI engineer and senior DS differentiator.
 - [ ] **Sentence transformers** — embed recipe titles, ingredients,
   instructions into dense vectors; `sentence-transformers` library
 - [ ] **Vector index** — FAISS locally; pgvector when Postgres arrives
-  at Stage 6; same interface, swappable backend
+  at Stage 7; same interface, swappable backend
 - [ ] **`search_recipes` evolution** — same tool, smarter implementation;
   natural language queries ("something light with what's in my fridge")
-- [ ] **Embedding storage** — persist vectors in SQLite (Stage 2.5 DB);
+- [ ] **Embedding storage** — persist vectors in SQLite (Stage 3 DB);
   recompute only on recipe changes
 - [ ] **Hybrid search** — combine substring (deterministic) with semantic
   (probabilistic); configurable blend
@@ -230,11 +231,11 @@ core AI engineer and senior DS differentiator.
 
 ---
 
-## Stage 5 — Recipe Recommender & Bayesian Inference
+## Stage 6 — Recipe Recommender & Bayesian Inference
 
-**Target tag: `v0.5.0`**
+**Target tag: `v0.6.0`**
 **Goal:** Build a personalized recipe recommender using dinner history
-(Stage 2.5) and embedding infrastructure (Stage 4). Primary ML showcase.
+(Stage 3) and embedding infrastructure (Stage 5). Primary ML showcase.
 **Portfolio signal:** Bayesian inference, collaborative filtering, temporal
 modeling, and production engineering — the rarest DS portfolio combination.
 
@@ -259,7 +260,7 @@ modeling, and production engineering — the rarest DS portfolio combination.
 
 ---
 
-## Stage 6 — Cloud, App & MLOps (Infrastructure Wraps ML)
+## Stage 7 — Cloud, App & MLOps (Infrastructure Wraps ML)
 
 **Target tag: `v1.0.0`**
 **Goal:** Package the ML system into a production-grade, publicly
@@ -288,7 +289,7 @@ depth + ML depth + ops awareness. Lead DS / AI engineer portfolio piece.
 - [ ] Full frontend — Streamlit, Gradio, or FastHTML (decide when closer)
 - [ ] User authentication
 - [ ] Full `launchd`/`systemd` service setup (deferred from Stage 2)
-- [ ] Full CLI with `typer` (deferred from Stage 3)
+- [ ] Full CLI with `typer` (deferred from Stage 4)
 
 #### MLOps & observability
 - [ ] CloudWatch logs + uptime monitoring
@@ -297,7 +298,7 @@ depth + ML depth + ops awareness. Lead DS / AI engineer portfolio piece.
 - [ ] Structured logging + metrics + health endpoints
 - [ ] Observability dashboard (production metrics + ML metrics unified)
 
-#### Advanced ML (if not completed in Stage 5)
+#### Advanced ML (if not completed in Stage 6)
 - [ ] Knowledge graph — recipe → ingredient → technique → cuisine
 - [ ] RAG pipeline over recipe corpus
 - [ ] Vision features — ingredient prediction from fridge photos

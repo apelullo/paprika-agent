@@ -29,11 +29,11 @@ SSE cutoff date — a vendor deadline mistaken for a protocol removal; corrected
 switching transports. Intentional separation of concerns (hexagonal architecture).
 
 ### Config: Env vars + value-authoritative resolution
-**Decision:** Machine-specific `.env` files; no config files until Stage 6. A frozen
+**Decision:** Machine-specific `.env` files; no config files until Stage 7. A frozen
 `ServerConfig` resolved by `ServerConfig.from_env(env)`.
 **Rationale:** Env vars are the twelve-factor standard for separating config from
 code, and `.env` is already the project convention. Encrypted credential storage in a
-database (Stage 6) stays compatible — the env var holds the key or DSN; the database
+database (Stage 7) stays compatible — the env var holds the key or DSN; the database
 holds the secrets.
 **Resolution is value-authoritative** (shipped in Piece 1, superseding the desktop
 source's presence-based sketch):
@@ -50,16 +50,16 @@ source's presence-based sketch):
 
 ### Security: Static LAN IP + per-device bearer tokens
 **Decision:** Bind to static LAN IP (not `0.0.0.0`); authenticate via HTTP bearer
-token; one key per device; OAuth 2.1 deferred to Stage 6.
+token; one key per device; OAuth 2.1 deferred to Stage 7.
 **Rationale:** Binding to a specific interface limits exposure to the home network.
-Bearer tokens are the direct precursor to OAuth — learning them now makes Stage 6 a
+Bearer tokens are the direct precursor to OAuth — learning them now makes Stage 7 a
 natural upgrade, not a rewrite. Per-device keys enable revocation without disrupting
 other users. `0.0.0.0` exposes the server on all interfaces, including any untrusted
 networks the machine may join.
 **Static IP vs mDNS:** Static IP (DHCP reservation in router) chosen over mDNS
 `.local` for Stage 2 — it builds the correct mental model (IP is the address; DNS is
 an abstraction on top), and Windows mDNS support is inconsistent (relevant when the
-desktop joins at Stage 4). mDNS revisitable as a convenience layer later.
+desktop joins at Stage 5). mDNS revisitable as a convenience layer later.
 
 ### Server machine: MacBook Air + launchd
 **Decision:** MacBook Air as always-on server; `launchd` for process management.
@@ -130,13 +130,13 @@ health — see Piece 4).
 or contents through timing. Apply from the first implementation.
 
 **Revocation:** remove the key from `.env`, restart the server. Simple, explicit, a
-direct conceptual precursor to OAuth token revocation in Stage 6.
+direct conceptual precursor to OAuth token revocation in Stage 7.
 
 **Also carries:** `MCP_HOST` format validation (`ipaddress` stdlib — currently
 unvalidated, fails late at uvicorn bind); the first `tests/integration/` suite.
 
 **What this teaches:** authentication (who are you?) vs. authorization (what are you
-allowed to do?) — auth middleware handles the former; the latter arrives in Stage 6
+allowed to do?) — auth middleware handles the former; the latter arrives in Stage 7
 with OAuth 2.1.
 
 ### Piece 4 — Health endpoint: unauthenticated `GET /health`
@@ -241,7 +241,7 @@ Piece 7  Claude Desktop config (remote entry + keep stdio entry)
 3. **Infrastructure vs. application config:** static IP lives in the router, not the
    repo. `.env` holds runtime config. Code holds no secrets and no environment
    assumptions.
-4. **Progressive security:** bearer tokens now → OAuth 2.1 at Stage 6. Each stage
+4. **Progressive security:** bearer tokens now → OAuth 2.1 at Stage 7. Each stage
    teaches the concept the next builds on.
 5. **Gate discipline:** tests must be green before deployment. The repo is always in a
    deployable state.
@@ -251,10 +251,10 @@ Piece 7  Claude Desktop config (remote entry + keep stdio entry)
 ## Deferred (do not implement in Stage 2)
 
 - Auto-sync on client connect (natural follow-on to the `_cache_populated` sentinel —
-  revisit at Stage 3)
-- Cache/database warming on server startup (revisit at Stage 2.5)
+  revisit at Stage 4)
+- Cache/database warming on server startup (revisit at Stage 3)
 - Centralize test fixtures (factory fixture in `tests/conftest.py`) — just before the
-  Stage 2.5 schema change; mutation-safe shared recipe data
-- Windows desktop as compute offload node (Stage 4 — distributed task queue)
+  Stage 3 schema change; mutation-safe shared recipe data
+- Windows desktop as compute offload node (Stage 5 — distributed task queue)
 - mDNS `.local` hostname (convenience layer — revisit if static IP becomes painful)
-- OAuth 2.1 (Stage 6)
+- OAuth 2.1 (Stage 7)

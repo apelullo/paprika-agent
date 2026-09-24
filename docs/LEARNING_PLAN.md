@@ -35,7 +35,7 @@ answers and must be recalibrated as the project and AI landscape evolve:
 - **Edge cases** — are any reasoning, synthesis, or judgment tasks becoming
   complex enough to warrant tool calls (e.g. structured scratchpad,
   chain-of-thought as an inspectable step)?
-- **Scope discipline** — are Stage 6 ideas staying flagged rather than
+- **Scope discipline** — are Stage 7 ideas staying flagged rather than
   implemented? Is the current stage's learning arc being completed first?
 - **Progress recalibration** — honest assessment of what's been built vs.
   what a typical developer would have at this point; correct for
@@ -106,10 +106,10 @@ lifecycle before adding network complexity.
   prompt fully specifies behavior and follows existing patterns
 - [x] **Architectural seam awareness** — sensing that `server.py` does two
   things (MCP server + Paprika API client) before being able to articulate
-  it formally; Stage 2.5 will force the split
+  it formally; Stage 3 will force the split
 - [x] **Search system design — field ambiguity** — without semantic
   understanding, multi-field search adds noise not signal; the right
-  solution is semantic search (Stage 4), not more fields
+  solution is semantic search (Stage 5), not more fields
 - [x] **Tool selection ambiguity as a design cost** — if the LLM has
   to guess between two tools on fuzzy signals, complexity moves into
   the tool boundary, which is invisible and harder to debug
@@ -168,12 +168,12 @@ service configuration before cloud introduces additional abstraction.
   (`server.py` no longer importing `asyncio`/`httpx` is proof the boundary holds).
 - [x] **Typed return contracts** — a dataclass at a layer boundary separates *what
   happened* from *how it is phrased*; assert fields, not message copy; on-ramp to
-  Pydantic / SQLite models at 2.5.
+  Pydantic / SQLite models at Stage 3.
 - [x] **Import/monkeypatch discipline** — from-import only never-patched names;
   module-reference anything patched (the patch must resolve on the module dict at
   call time); the same missing-`global` error is silent on write-only, loud on read+write.
 - [ ] **Factory test fixtures** — mutation-safe shared test data via a fixture factory
-  in `tests/conftest.py`; flagged for just before the Stage 2.5 schema change.
+  in `tests/conftest.py`; flagged for just before the Stage 3 schema change.
 
 ### Config & design (Piece 1, 2026-07-16)
 - [x] **Value-authoritative config selection** — unset→default, set→validate, unknown→raise; vs presence-only footgun.
@@ -217,7 +217,7 @@ service configuration before cloud introduces additional abstraction.
   decision is not edited; the superseding entry is appended. History ≠ view.
 - [x] **Authn ≠ authz ≠ tenancy** — identity, permission, and data partitioning are
   distinct layers; bearer tokens are a perimeter, not a partition. (Forward beat to Piece 3
-  / Stage 2.5.)
+  / Stage 3.)
 
 ### Doc-process & collaboration architecture (Step 2, 2026-07-23/24)
 > Process and documentation-architecture concepts (not Python), from turning `docs/`
@@ -249,7 +249,7 @@ service configuration before cloud introduces additional abstraction.
 
 ---
 
-## Stage 3 — Custom Client
+## Stage 4 — Custom Client
 
 **Goal:** Build a client that talks to the MCP server in code, without
 relying on Claude Desktop's config format. Understand the client/server
@@ -275,7 +275,7 @@ contract from both sides.
 
 ---
 
-## Stage 4 — Semantic Search & Embeddings
+## Stage 5 — Semantic Search & Embeddings
 
 **Goal:** Implement embedding-based semantic search — highest-value,
 lowest-infrastructure ML feature. Runs entirely locally.
@@ -298,7 +298,7 @@ lowest-infrastructure ML feature. Runs entirely locally.
 
 ---
 
-## Stage 5 — Recipe Recommender & Bayesian Inference
+## Stage 6 — Recipe Recommender & Bayesian Inference
 
 **Goal:** Build a personalized recommender using dinner history and
 embedding infrastructure. Primary ML showcase.
@@ -320,7 +320,7 @@ embedding infrastructure. Primary ML showcase.
 
 ---
 
-## Stage 6 — Cloud, App & MLOps
+## Stage 7 — Cloud, App & MLOps
 
 **Goal:** Package the ML system into a production-grade application.
 Infrastructure wraps the ML — not the other way around.

@@ -114,10 +114,10 @@ change; the sophistication grows inside it.
 Python · FastMCP · uv · pytest · ruff · GitHub Actions · Paprika API
 
 ## Roadmap
-- [x] MCP tool suite (v0.1.0)
-- [ ] Local network deployment — *in progress*
-- [ ] Local recipe database (SQLite)
-- [ ] Custom client
-- [ ] Semantic search & embeddings
-- [ ] Bayesian recipe recommender
-- [ ] Cloud deployment & MLOps (v1.0.0)
+- [x] Stage 1: MCP tool suite (v0.1.0)
+- [ ] Stage 2: Local network deployment (v0.2.0) - in progress
+- [ ] Stage 3: Local recipe database and schema (v0.3.0)
+- [ ] Stage 4: Custom client (v0.4.0)
+- [ ] Stage 5: Semantic search and embeddings (v0.5.0)
+- [ ] Stage 6: Bayesian recipe recommender (v0.6.0)
+- [ ] Stage 7: Cloud deployment and MLOps (v1.0.0)
