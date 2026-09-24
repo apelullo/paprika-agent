@@ -38,3 +38,6 @@ docs/_archive/*
 # Assets
 assets/archive/
 assets/**/*.mov
+
+# macOS
+.DS_Store

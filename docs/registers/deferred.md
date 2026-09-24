@@ -6,7 +6,7 @@ for pull-forward (SOP.md section 4, step 2). Consolidated 2026-09-22 (pass 20260
 from SUMMARY, DEV_PLAN, STAGE_02, project_development_plan, HANDOFF. Stage numbers
 are the 1-7 numbering.
 
-next number: 27
+next number: 28
 
 | # | Item | Target | Origin | Status |
 |---|---|---|---|---|
@@ -36,6 +36,7 @@ next number: 27
 | 24 | OAuth 2.1 (full auth hardening) | Stage 7 | STAGE_02, DEV_PLAN | open |
 | 25 | Explicit `MCP_ALLOW_BIND_ALL` opt-in for `0.0.0.0`/`::` when containerized | Stage 7 | chat 2026-09-22 | open |
 | 26 | AWS EC2 manager + Route 53 updater; MLOps and observability dashboards | Stage 7 | SUMMARY, DEV_PLAN | open |
+| 27 | Author LEARNING_PLAN Stage 3 (Local Database & Schema) learning goals; a placeholder heading keeps the numbering continuous until then | Stage 3 start (design step of its first pass) | chat 2026-09-24 | open |
 
 ## Closed
 

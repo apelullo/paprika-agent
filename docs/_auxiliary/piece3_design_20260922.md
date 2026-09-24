@@ -3,7 +3,7 @@
 **Status:** in-progress
 **Closes when:** Pass B's spec (`docs/spec/spec_stage2_piece3_<pass>.md`) is written
 from this file and consumed
-**Last updated:** 2026-09-23
+**Last updated:** 2026-09-24
 
 Chat-authored design for Stage 2 Piece 3, settled in pass `20260922` (2026-09-22 to
 2026-09-23). Every decision here has a `DECISIONS.md` line dated 2026-09-22 or
@@ -68,9 +68,10 @@ non-ASCII input does not raise.
 **HTTP, `tests/integration/test_auth_http.py` (`integration` marker):** app from
 `create_server(config)` with two device keys, `json_response=True`; missing header →
 401 with `WWW-Authenticate`; wrong token → 401; each device's token → initialize
-succeeds; health guard (same app instance, both assertions). One `live`-marked
-placeholder is not needed; the marker is registered for the deferred live tests
-(deferred.md items 2 and 3).
+succeeds; health guard (same app instance, both assertions); the `/health` body is
+exactly `{"status": "ok"}`; a key removed from the environment is rejected on the next
+config resolve (revocation). One `live`-marked placeholder is not needed; the marker is
+registered for the deferred live tests (deferred.md items 2 and 3).
 
 **Guard tests (signature):** `create_server` returns a `FastMCP` whose `auth` is a
 `TokenVerifier` in http mode and `None` in stdio mode.

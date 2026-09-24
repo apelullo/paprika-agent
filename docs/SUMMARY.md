@@ -863,8 +863,7 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ### 2026-09-22/23 — Pass 20260922: Doc Process v4 and Piece 3 Design
 
-**Commits:** `4e16d35` → `240d300` (C1-C8) · this routing commit (C9) · project-plan
-update (C10)
+**Commits:** 12 commits (C1-C10 plus two close-amendment commits)
 
 #### What was built
 Doc process v4, installed as Pass A. Stages renumbered 1-7 with one version tag per
@@ -924,6 +923,11 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
   closed
 - (2026-09-23) The chat audits the close report before archive, not from the archive;
   close amendments become commits inside the pass (raised by Art; close amendment)
+- (2026-09-23) Deferred row 1 covers README.md's intro and SUMMARY.md's Executive
+  Summary (Art, in Claude Code)
+- (2026-09-24) A ledger's non-dated living sections are structure, not history: they
+  follow the stage map; only dated entries are frozen
+- (2026-09-24) Close amendments are applied as one commit per round, not one per item
 
 #### Concepts learned
 - **Toolset namespace collision** (2026-07-24) — two toolsets with overlapping
@@ -964,6 +968,13 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
 - **The close-amendment mechanism** (2026-09-23) — a `## Close amendments` section
   appended to the in-flight spec is what makes the audit gate actionable: it gives a
   finding a place to become a commit inside the pass that owns it.
+- **Completion greps must be path-scoped** (2026-09-24) — `--include='*.md'
+  --exclude-dir=_archive --exclude='SUMMARY.md' ...`; a line-content `grep -v` on the
+  output drops any hit whose line also mentions an excluded name. Code found the
+  spec's own check hiding a hit. Same class as "a zero count is a claim".
+- **Diff a replacing appendix against what it replaces** (2026-09-24) — an appendix
+  that replaces a section must be diffed against that section for dropped items, not
+  only read for correctness; two Piece 5 test cases fell out of Appendix E that way.
 
 #### Process / tooling
 - **Upstream issue resolved** (2026-07-24) — the comment on
@@ -989,7 +1000,7 @@ Moved to [DECISIONS.md](../DECISIONS.md) on 2026-09-22 (pass 20260922).
 ### TODO (immediate — Stage 2 next)
 - [x] Tool input validation — FastMCP/Pydantic behavior
 - [x] `sync_recipes` tool — incremental (hash diff) + full refresh; `_cache_populated` flag
-- [x] `search_recipes` scope decision — title-only for Stage 1; deferred to Stage 4
+- [x] `search_recipes` scope decision — title-only for Stage 1; deferred to Stage 5
 - [x] README: Demo section — MP4 via GitHub user-attachments CDN
 - [x] **v0.1.0 tagged and released**
 - [x] **Stage 2 Piece 0 — refactor complete** (commits `24c9d45` structural split,
@@ -1002,7 +1013,7 @@ Moved to [DECISIONS.md](../DECISIONS.md) on 2026-09-22 (pass 20260922).
   miss. **Carries:** `MCP_HOST` validation + scoped security hardening; first
   `tests/integration/` suite; earmarked as a hands-on piece.
 
-### Stage completion release workflow (manual until Stage 4-5)
+### Stage completion release workflow (manual until Stage 5-6)
 Run this at the end of every stage, before moving to the next:
 ```bash
 git tag vX.Y.Z
@@ -1022,7 +1033,7 @@ git push
 
 ### Deferred ideas (flagged, not forgotten)
 
-Deferred items live in [docs/registers/deferred.md](registers/deferred.md) (consolidated 2026-09-22, pass 20260922).
+Deferred items live in [docs/registers/deferred.md](registers/deferred.md) and unvetted ideas in [docs/_auxiliary/ideas_20260922.md](_auxiliary/ideas_20260922.md) (consolidated 2026-09-22, pass 20260922).
 
 ### Resources to pursue
 - *Designing Data-Intensive Applications* — Kleppmann (systems design)
@@ -1033,4 +1044,6 @@ Deferred items live in [docs/registers/deferred.md](registers/deferred.md) (cons
 
 ## Doc Update Process
 
-Moved to [`docs/DOC_PROCESS.md`](DOC_PROCESS.md) — the single source of truth for the process (this log is a chronological record, not a process home). The Decision Log remains in this file, above.
+Process: [docs/SOP.md](SOP.md) (doc process v4, 2026-09-22). Decisions:
+[DECISIONS.md](../DECISIONS.md) at the repo root. Pointer updated 2026-09-24 (close
+amendment, pass 20260922).

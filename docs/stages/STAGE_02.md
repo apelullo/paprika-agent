@@ -171,7 +171,11 @@ wrong token → 401; each device's token independently valid; the health guard. 
 through Starlette's `TestClient` against `mcp.http_app(json_response=True)` (lifespan
 runs on `__enter__`); the in-process `fastmcp.Client` bypasses HTTP and cannot test
 auth. Markers `integration` and `live` registered in `pyproject.toml`; CI runs
-`-m "not live"`. Existing 51 tests pass unchanged (transport transparency).
+`-m "not live"`. Existing tool tests pass unchanged (transport transparency); the four
+config tests that resolve http mode gain a key, since zero keys is now a `ValueError`.
+Two cases carried from the old Piece 5 list: the `/health` body is exactly
+`{"status": "ok"}`; a key removed from the environment is rejected on the next config
+resolve (revocation).
 
 **What this teaches:** the composition root (dependency injection at construction vs
 mutation after); authentication (who are you?) vs authorization (what may you do?),
@@ -267,4 +271,4 @@ Piece 7  Claude Desktop config (remote entry + keep stdio entry)
 
 ## Deferred (do not implement in Stage 2)
 
-Deferred items live in [docs/registers/deferred.md](../registers/deferred.md) (consolidated 2026-09-22, pass 20260922).
+Deferred items live in [docs/registers/deferred.md](../registers/deferred.md) and unvetted ideas in [docs/_auxiliary/ideas_20260922.md](../_auxiliary/ideas_20260922.md) (consolidated 2026-09-22, pass 20260922).

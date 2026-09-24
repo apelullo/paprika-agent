@@ -42,6 +42,12 @@ answers and must be recalibrated as the project and AI landscape evolve:
   underestimation bias
 - **Architecture check-in** — how has the overall paprika-agent architecture
   evolved? Is the "extend naturally, not replace" principle holding?
+- **Boundary integrity** — are defined boundaries still clean, or has knowledge
+  leaked across them? Audit: `config.py` framework-free? `paprika_client` still
+  sole mutator of `_cache_populated`? `SyncResult` still separating what-happened
+  from how-it's-phrased? Doc ownership matrix honored (no unique facts authored
+  into regenerated views)? A leak is often invisible until named — the itch that
+  something is "off" is the signal to look.
 
 ---
 
@@ -57,6 +63,7 @@ lifecycle before adding network complexity.
 - [x] Inverted index for O(1) lookup
 - [x] Lazy initialization pattern
 - [x] Conventional commits and commit hygiene
+- [x] git-cliff: conventional commits drive changelog generation
 - [x] pytest: unit tests, monkeypatching, async mocking with pytest-httpx
 - [x] Pre-commit hooks (ruff lint + format + advisory staleness check)
 - [x] GitHub Actions CI pipeline (ruff + pytest gates)
@@ -95,9 +102,8 @@ lifecycle before adding network complexity.
   guard against the same bug returning; `test_sync_recipes_full_refresh
   _repopulates_after_flag_reset` is the first regression test in this project
 - [x] **`pytest.mark` and mocked vs. live integration tests** — `@pytest.mark.anyio`
-  changes how a test runs; custom marks like `@pytest.mark.integration`
-  change when/where it runs; live tests in `tests/integration/`, excluded
-  from CI with `-m "not integration"`
+  changes how a test runs; custom marks change when/where it runs: `integration`
+  (runs in CI) and `live` (excluded via `-m "not live"`)
 - [x] **Call counter pattern in tests** — monkeypatching with a list;
   `assert fetch_calls == []` is more explicit than relying on httpx_mock
   to error on unexpected requests
@@ -135,7 +141,7 @@ lifecycle before adding network complexity.
 
 ---
 
-## Stage 2 — Local Network Deployment (Next)
+## Stage 2 — Local Network Deployment (Current)
 
 **Goal:** Understand client/server separation, network protocols, and
 service configuration before cloud introduces additional abstraction.
@@ -273,6 +279,14 @@ service configuration before cloud introduces additional abstraction.
   checks and sign-off points keeps the shape and loses the safety.
 - [x] **The close-amendment mechanism** — a `## Close amendments` section in the
   in-flight spec lets an audit finding become a commit inside the pass that owns it.
+- [x] **Completion greps are path-scoped** — a line-content `grep -v` drops any hit
+  whose line also mentions an excluded name; scope the grep by path.
+- [x] **Diff a replacing appendix against what it replaces** — reading it for
+  correctness misses dropped items; two Piece 5 test cases fell out that way.
+
+---
+
+## Stage 3: Local Database & Schema (goals authored at stage start; see DEV_PLAN.md Stage 3 and docs/registers/deferred.md rows targeting Stage 3)
 
 ---
 
@@ -297,8 +311,8 @@ contract from both sides.
   what does actual context usage look like? Is relevance density intuition
   matching observed behavior?
 - [ ] **Integration testing** — subprocess/HTTP-level tests; the test pyramid;
-  marking and separating slow suites (`pytest -m "not integration"`). First
-  concrete use lands in Stage 2 Piece 3 (auth).
+  marking and separating slow suites: `integration` (runs in CI) and `live` (excluded
+  via `-m "not live"`). First concrete use lands in Stage 2 Piece 3 (auth).
 
 ---
 

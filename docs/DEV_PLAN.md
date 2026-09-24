@@ -17,7 +17,8 @@
 4. **Production quality throughout** — tests, CI, documentation, and clean
    architecture from day one, not retrofitted later
 5. **ML before infrastructure** — cloud deployment wraps an impressive ML
-   system; it is not a prerequisite for one; prioritize the differentiator
+   system; it is not a prerequisite for one; prioritize the differentiator.
+   Stages 5 and 6 are the differentiators.
 
 ---
 
@@ -128,7 +129,7 @@ ops awareness — rare for a DS candidate.
   (OAuth 2.1) still deferred to Stage 7.
 - **`server.py` split pulled forward from Stage 3 into Piece 0** — done (commits
   `24c9d45`, `090c099`); cleaner MCP-only surface before Stage 2's MCP-side additions.
-- **Health endpoint (`GET /health`) added in Stage 2** (Piece 4) — unauthenticated;
+- **Health endpoint (`GET /health`) added in Stage 2** (Piece 3, 3b) — unauthenticated;
   isolates failure layers during network debugging.
 
 ### Architecture decision points
