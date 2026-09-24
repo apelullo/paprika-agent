@@ -83,12 +83,13 @@ runs early, is skipped, or is reordered without his consent given in chat first.
 | 7 | Code | Sweep `docs/_auxiliary/`: every file carries `**Status:**` and `**Closes when:**`; report `closed` candidates; flips are Art's decision; files marked `closed` move to `docs/_archive/auxiliary/closed_<pass>/` | an untagged temporary file has no lifecycle |
 | 8 | Code | Move `## Post-reconciliation` entries to `docs/_inbox/carryover_<pass>.md` | the holding place for material that surfaced mid-apply |
 | 9 | Code | Update `project_development_plan.md` (current state, next actions); commit | the next session's first read must be current |
-| 10 | Code | Write the close report to `docs/session/code_report_<pass>.md`: HEAD, commits, test count, every cross-reference discrepancy, carryover, completion greps | a report in chat scrollback is lost; a file archives with the pass and the chat audits it there |
-| 11 | Code | Archive: `docs/_archive/retired_<pass>/` receives both scratchpads, the close report, every consumed spec and carryover; verify both ends (destination holds the file, source is gone) | a move that checks one end can hide a collision |
-| 12 | Code | Push; CI green; tell the chat the pass is archived | a close that is not pushed is not closed |
+| 10 | Code | Write the close report to `docs/session/code_report_<pass>.md`: HEAD, commits, test count, every cross-reference discrepancy, carryover, routing table by type, `_auxiliary` sweep, completion greps | a report in chat scrollback is lost; a file archives with the pass |
+| 11 | Chat | Audit the report against the spec and both scratchpads; approve the close, or append items under `## Close amendments` at the end of the spec | an executor closing a pass without the author's sign-off is the loop closing through one actor; a defect found after archive can only be fixed in a different pass |
+| 12 | Code | Apply each close amendment as its own commit; update the report; return to step 11 until the chat approves | a finding needs a place to become a commit inside the pass that owns it |
+| 13 | Code | Archive: `docs/_archive/retired_<pass>/` receives both scratchpads, the close report, every consumed spec and carryover; verify both ends (destination holds the file, source is gone) | a move that checks one end can hide a collision |
+| 14 | Code | Push; CI green; tell the chat the pass is archived | a close that is not pushed is not closed |
 
-`docs/session/` and `docs/spec/` empty beyond their READMEs means closed. The chat
-audits the close report from the archive; a defect goes to `docs/_inbox/carryover_<pass>.md`.
+`docs/session/` and `docs/spec/` empty beyond their READMEs means closed.
 
 ## 5. Archive conventions
 

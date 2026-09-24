@@ -154,7 +154,7 @@ modification is their purpose.
 | `docs/_inbox/carryover_<pass>.md` | Transient | Art (between sessions) or Claude Code (post-reconciliation moves) | writer creates; Claude Code archives | between sessions; close |
 | `docs/_archive/**` | Archive | Claude Code (moves at close) | Claude Code | close |
 | `docs/session/code_scratchpad_<pass>.md` | Transient | Claude Code (sole) | Claude Code | continuous |
-| `docs/session/code_report_<pass>.md` | Transient | Claude Code (sole) | Claude Code writes at close; archived with the pass | close |
+| `docs/session/code_report_<pass>.md` | Transient | Claude Code (sole) | Claude Code writes at close; the chat audits before archive | close |
 | `docs/session/chat_scratchpad_<pass>.md` | Transient | project chat (sole) | chat writes; Claude Code archives at close | continuous |
 | `docs/spec/*` | Transient | project chat (sole) | Claude Code consumes + archives | close |
 | every folder `README.md` | Readme | project chat | Claude Code | folder convention change |

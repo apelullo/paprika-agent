@@ -7,7 +7,7 @@ file; both files are readable by both actors.
 |---|---|---|
 | `code_scratchpad_<pass>.md` | Claude Code | both |
 | `chat_scratchpad_<pass>.md` | project chat | both |
-| `code_report_<pass>.md` | Claude Code (written at close) | both; the chat audits it from the archive |
+| `code_report_<pass>.md` | Claude Code (written at close) | both; the chat audits it before archive |
 
 `<pass>` is the pass identifier (SOP.md section 1). Lifecycle: archived at the close
 of the pass into `docs/_archive/retired_<pass>/`. An empty `session/` (this README

@@ -269,6 +269,10 @@ service configuration before cloud introduces additional abstraction.
   target, changed the sink and the write.
 - [x] **Register vs temporary file** — rows close in a register; files close in
   `_auxiliary/`.
+- [x] **Transfer loses verification** — copying a procedure's actions without its
+  checks and sign-off points keeps the shape and loses the safety.
+- [x] **The close-amendment mechanism** — a `## Close amendments` section in the
+  in-flight spec lets an audit finding become a commit inside the pass that owns it.
 
 ---
 

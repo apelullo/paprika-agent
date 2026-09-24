@@ -922,6 +922,8 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
 - (2026-09-23) `MCP_HOST` accepts IP literals only; `0.0.0.0` and `::` rejected
 - (2026-09-23) A pass resumes in the same chat and the same Claude Code session until
   closed
+- (2026-09-23) The chat audits the close report before archive, not from the archive;
+  close amendments become commits inside the pass (raised by Art; close amendment)
 
 #### Concepts learned
 - **Toolset namespace collision** (2026-07-24) — two toolsets with overlapping
@@ -955,6 +957,13 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
   target.
 - **Deferred vs ideas maps to register vs temporary file** (2026-09-23) — rows close
   in a register; files close in `_auxiliary/`.
+- **Transfer loses verification** (2026-09-23) — transferring a procedure's actions
+  without its verification steps and sign-off points reproduces the shape and loses
+  the safety; audit the transfer by asking, for each check in the source, where it
+  landed in the copy.
+- **The close-amendment mechanism** (2026-09-23) — a `## Close amendments` section
+  appended to the in-flight spec is what makes the audit gate actionable: it gives a
+  finding a place to become a commit inside the pass that owns it.
 
 #### Process / tooling
 - **Upstream issue resolved** (2026-07-24) — the comment on
