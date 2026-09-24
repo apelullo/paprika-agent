@@ -861,7 +861,7 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ---
 
-### 2026-09-22/23 — Pass 20260922: Doc Process v4 and Piece 3 Design
+### 2026-09-22 to 2026-09-24 — Pass 20260922: Doc Process v4 and Piece 3 Design
 
 **Commits:** 12 commits (C1-C10 plus two close-amendment commits)
 
@@ -928,6 +928,14 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
 - (2026-09-24) A ledger's non-dated living sections are structure, not history: they
   follow the stage map; only dated entries are frozen
 - (2026-09-24) Close amendments are applied as one commit per round, not one per item
+- (2026-09-24) Model by pass type: Fable 5.1 for stage starts, new architecture, process
+  changes, and structural-pass audits; Opus 5.5 for settled design passes; Code on Opus
+  5.5 (Art)
+- (2026-09-24) Effort is the lever after model; Extra used, never Max; the report's
+  next-pass line names model and effort (Art)
+- (2026-09-24) Carryover gains the chat as a post-close writer; every entry carries
+  author and date (Art)
+- (2026-09-24) The staleness process is designed in a short process pass after Pass B
 
 #### Concepts learned
 - **Toolset namespace collision** (2026-07-24) — two toolsets with overlapping
@@ -975,6 +983,9 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
 - **Diff a replacing appendix against what it replaces** (2026-09-24) — an appendix
   that replaces a section must be diffed against that section for dropped items, not
   only read for correctness; two Piece 5 test cases fell out of Appendix E that way.
+- **Effort levels, not "extended thinking"** (2026-09-24) — in the Claude app, Effort
+  (Low/Medium/High/Extra/Max) is the thinking-budget lever; "extended thinking" is an
+  API-side frame. Correction from Art.
 
 #### Process / tooling
 - **Upstream issue resolved** (2026-07-24) — the comment on
@@ -1009,9 +1020,8 @@ Moved to [DECISIONS.md](../DECISIONS.md) on 2026-09-22 (pass 20260922).
 - [x] **Stage 2 Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection** (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
 - [x] **Stage 2 Piece 2 — transport wiring**; `_run_kwargs` adapter; suite 46→51; CI green (`3e21a04`, `bd5462e`)
 - [x] **Step 2 — docs/ staging-site reorganization**; v3 process, author-scoped scratchpads, in-repo living stage plans, one-author memory model (`b514720`, `f460e3d`, `16f6813`)
-- [ ] Stage 2 Piece 3 — per-device bearer-token auth; `hmac.compare_digest`; 401 on
-  miss. **Carries:** `MCP_HOST` validation + scoped security hardening; first
-  `tests/integration/` suite; earmarked as a hands-on piece.
+- [ ] Stage 2 Piece 3 — auth, health, CI gate (Pieces 4 and 5 folded in 2026-09-22);
+  earmarked as a hands-on piece.
 
 ### Stage completion release workflow (manual until Stage 5-6)
 Run this at the end of every stage, before moving to the next:

@@ -3,8 +3,9 @@
 
 > **Living document** — no date suffix; git supplies the history. Migrated in-repo
 > 2026-07-23 from the desktop planning file (now archive, not source).
-> Amended 2026-09-22/23 (pass 20260922): stage numbers 1-7; Pieces 4-5 folded into 3;
-> Piece 3 extension point corrected to `TokenVerifier`; `MCP_HOST` rule recorded.
+> Amended 2026-09-22 to 2026-09-24 (pass 20260922): stage numbers 1-7; Pieces 4-5
+> folded into 3; Piece 3 extension point corrected to `TokenVerifier`; `MCP_HOST` rule
+> recorded.
 >
 > **Status:** Pieces 0-2 complete; **Piece 3 (auth, health, CI gate) next**, as Pass B.
 > Pieces 4 and 5 were folded into Piece 3 on 2026-09-22; Pieces 6 and 7 keep their
@@ -171,11 +172,11 @@ wrong token → 401; each device's token independently valid; the health guard. 
 through Starlette's `TestClient` against `mcp.http_app(json_response=True)` (lifespan
 runs on `__enter__`); the in-process `fastmcp.Client` bypasses HTTP and cannot test
 auth. Markers `integration` and `live` registered in `pyproject.toml`; CI runs
-`-m "not live"`. Existing tool tests pass unchanged (transport transparency); the four
-config tests that resolve http mode gain a key, since zero keys is now a `ValueError`.
-Two cases carried from the old Piece 5 list: the `/health` body is exactly
-`{"status": "ok"}`; a key removed from the environment is rejected on the next config
-resolve (revocation).
+`-m "not live"`. Existing tool tests pass unchanged (transport transparency); the
+existing config tests that resolve http mode gain a key (how many depends on validation
+order; Pass B counts them), since zero keys is now a `ValueError`. Two cases carried from
+the old Piece 5 list: the `/health` body is exactly `{"status": "ok"}`; a key removed
+from the environment is rejected on the next config resolve (revocation).
 
 **What this teaches:** the composition root (dependency injection at construction vs
 mutation after); authentication (who are you?) vs authorization (what may you do?),

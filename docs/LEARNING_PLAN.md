@@ -283,6 +283,8 @@ service configuration before cloud introduces additional abstraction.
   whose line also mentions an excluded name; scope the grep by path.
 - [x] **Diff a replacing appendix against what it replaces** — reading it for
   correctness misses dropped items; two Piece 5 test cases fell out that way.
+- [x] **Effort levels** — in the Claude app, Effort (Low to Max) is the thinking-budget
+  lever; "extended thinking" is an API-side frame.
 
 ---
 

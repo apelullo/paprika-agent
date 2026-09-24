@@ -63,6 +63,11 @@ both. Format: `- YYYY-MM-DD PREFIX: one line.`
   spec header, Claude Code appends further entries under a `## Post-reconciliation`
   heading in its own file. The in-flight pass ignores them; at close they move to
   `docs/_inbox/carryover_<pass>.md`.
+- **Post-close:** after archive, any actor may append to the just-closed pass's
+  `docs/_inbox/carryover_<pass>.md` in the entry form
+  `- YYYY-MM-DD <chat|code|art> PREFIX: one line.`; the next session-start sweep routes
+  it. Every Post-reconciliation entry carries a disposition when moved:
+  `(routed CAn)`, `(resolved CAn)`, or `(open: ...)`.
 - **Type discipline:** a new type needs a unique write action, not a unique file.
 - **Transfer check, first two v4 passes:** if a scratchpad is thin while good material
   sits in scrollback, the ritual needs fixing, not the file.
@@ -84,7 +89,7 @@ runs early, is skipped, or is reordered without his consent given in chat first.
 | 8 | Code | Move `## Post-reconciliation` entries to `docs/_inbox/carryover_<pass>.md` | the holding place for material that surfaced mid-apply |
 | 9 | Code | Update `project_development_plan.md` (current state, next actions); commit | the next session's first read must be current |
 | 10 | Code | Write the close report to `docs/session/code_report_<pass>.md`: HEAD, commits, test count, every cross-reference discrepancy, carryover, routing table by type, `_auxiliary` sweep, completion greps; completion greps are path-scoped (`--include='*.md' --exclude-dir=_archive --exclude='SUMMARY.md'` and so on), never a line-content `grep -v` | a report in chat scrollback is lost; a file archives with the pass |
-| 11 | Chat | Audit the report against the spec and both scratchpads; approve the close, or append items under `## Close amendments` at the end of the spec | an executor closing a pass without the author's sign-off is the loop closing through one actor; a defect found after archive can only be fixed in a different pass |
+| 11 | Chat | Audit the report against the spec and both scratchpads; approve the close, or append items under `## Close amendments` at the end of the spec; the approval names the next pass's model and effort in one line, which Code records in the report | an executor closing a pass without the author's sign-off is the loop closing through one actor; a defect found after archive can only be fixed in a different pass |
 | 12 | Code | Apply each amendment round as one commit; update the report; return to step 11 until the chat approves | a finding needs a place to become a commit inside the pass that owns it |
 | 13 | Code | Archive: `docs/_archive/retired_<pass>/` receives both scratchpads, the close report, every consumed spec and carryover; verify both ends (destination holds the file, source is gone) | a move that checks one end can hide a collision |
 | 14 | Code | Push; CI green; tell the chat the pass is archived | a close that is not pushed is not closed |

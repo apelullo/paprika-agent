@@ -151,7 +151,7 @@ modification is their purpose.
 | `docs/stages/STAGE_0N.md` | Authored | project chat | Claude Code | stage start; piece boundary |
 | `docs/registers/*.md` | Register | project chat (destinations named in the spec) | Claude Code | batch pass |
 | `docs/_auxiliary/*.md` | Temporary | project chat drafts; Art decides status flips | Claude Code (via the spec); Art directly for his own files | continuous; swept at close |
-| `docs/_inbox/carryover_<pass>.md` | Transient | Art (between sessions) or Claude Code (post-reconciliation moves) | writer creates; Claude Code archives | between sessions; close |
+| `docs/_inbox/carryover_<pass>.md` | Transient | Art (between sessions), the project chat (post-close thoughts), or Claude Code (post-reconciliation moves); every entry carries author and date | writer creates; Claude Code archives | between sessions; close |
 | `docs/_archive/**` | Archive | Claude Code (moves at close) | Claude Code | close |
 | `docs/session/code_scratchpad_<pass>.md` | Transient | Claude Code (sole) | Claude Code | continuous |
 | `docs/session/code_report_<pass>.md` | Transient | Claude Code (sole) | Claude Code writes at close; the chat audits before archive | close |
