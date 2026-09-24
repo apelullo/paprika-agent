@@ -863,25 +863,7 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ## Decision Log
 
-> Append-only. One line per reversed/notable decision:
-> `YYYY-MM-DD — what · reversed-from (if any) · reason/principle`. Grep at piece/stage boundaries.
-
-- 2026-07-16 — `MCP_TRANSPORT` value-authoritative · reversed from locked presence-only · make illegal states unrepresentable
-- 2026-07-16 — `MCP_PORT` validation branch-scoped to streamable-http (not global) · symmetry with unvalidated `MCP_HOST`; "stdio ignores host/port" = not inspected
-- 2026-07-16 — config resolver in new `config.py` · reversed from locked "logic in `server.py`" · separation of concerns + pure-resolver testability
-- 2026-07-16 — transport string `streamable-http` over `http` alias · explicit, consistent naming
-- 2026-07-17 — Doc Update Process v2: two-tier scratchpad + batch · Step 0 generate-at-end kept silently failing · honor capture-as-you-happen via append-as-you-go
-- 2026-07-17 — ownership matrix canonical in CLAUDE.md · was scattered (SUMMARY/memory/CLAUDE) · single in-repo source of truth
-- 2026-07-17 — doc-pass apply mechanics split on the git boundary (three branches) · in-repo → Claude Code applies + apostrophe-greps + commits (atomic where git lives); out-of-repo memory → written directly, no commit; auto-memory → memory system · supersedes the earlier two-branch rule; ownership matrix gains Author/Executor columns
-- 2026-07-17 — global curated memory → joint ownership (project chat + Claude Code) · was project-chat-sole (an artifact of the Filesystem-access framing) · both chats generate user-insight; unversioned-clobber risk handled by read-before-write + additive + batch reconciliation · authorized live in the Claude Code session
-- 2026-07-22 — transport contract value `streamable-http` → `http` · reversed from 2026-07-16 "transport string `streamable-http` over `http` alias" · `http` is FastMCP 3.x's own default for `run_http_async(transport=)` and the spelling its docstrings/CLI use; both literals route identically (transport.py:337), so this is contract clarity, not behavior
-- 2026-07-22 — `_run_kwargs` in `server.py`, not `config.py` nor folded into `from_env` · a translator belongs on the side of the boundary it translates INTO; FastMCP owns `run()`'s signature and `server.py` owns the FastMCP relationship; `config.py` stays framework-free · accepted tradeoff: "host/port only in HTTP mode" now stated twice — local visible duplication over distributed hidden coupling
-- 2026-07-23 — `docs/` staging site: lifecycle by location; `docs/spec/` + `docs/session/` transient with delete-on-consume; empty folders = boundary processed · turns a per-piece judgment call into an observable invariant
-- 2026-07-23 — two author-scoped scratchpads replace the single shared one · separate-by-file over separate-by-column; one writer per file, both readable
-- 2026-07-23 — memory files: Claude Code sole author, both actors propose via own scratchpads · reversed from 2026-07-17 "joint ownership" · joint authorship is a smell; separate proposing from authoring · authorship assigned by principle, not reachability (the connector outage was the test)
-- 2026-07-23 — executor rule rewritten in CLAUDE.md *and* working_principles.md: the git boundary is a *proxy* for one-author, not the rule itself
-- 2026-07-23 — stage plans migrate in-repo as living `docs/stages/STAGE_0N.md` · dated snapshots hand-roll version control and invite staleness (this one had two stale points); repo authoritative on detail, stage file on sequence + rationale
-- 2026-07-23 — scope split: trans-project principles live in memory, project conventions live in-repo · a single repo cannot source a convention that outlives it
+Moved to [DECISIONS.md](../DECISIONS.md) on 2026-09-22 (pass 20260922).
 
 ---
 

@@ -7,4 +7,4 @@ deletes them. An empty `spec/` (this README only) means the last piece boundary 
 fully processed — the emptiness is the signal.
 
 Contents are gitignored; this README is the tracked folder-keeper. Do not author
-durable facts here — decisions belong in SUMMARY.md's Decision Log.
+durable facts here — decisions belong in `DECISIONS.md`.
