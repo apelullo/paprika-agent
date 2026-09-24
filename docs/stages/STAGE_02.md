@@ -250,11 +250,4 @@ Piece 7  Claude Desktop config (remote entry + keep stdio entry)
 
 ## Deferred (do not implement in Stage 2)
 
-- Auto-sync on client connect (natural follow-on to the `_cache_populated` sentinel —
-  revisit at Stage 4)
-- Cache/database warming on server startup (revisit at Stage 3)
-- Centralize test fixtures (factory fixture in `tests/conftest.py`) — just before the
-  Stage 3 schema change; mutation-safe shared recipe data
-- Windows desktop as compute offload node (Stage 5 — distributed task queue)
-- mDNS `.local` hostname (convenience layer — revisit if static IP becomes painful)
-- OAuth 2.1 (Stage 7)
+Deferred items live in [docs/registers/deferred.md](../registers/deferred.md) (consolidated 2026-09-22, pass 20260922).

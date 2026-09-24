@@ -47,19 +47,9 @@
 6. **Recipe Recommender** — Bayesian preference model on 365+ day dinner history, temporal modeling, `recommend_recipes` tool, analytics dashboard
 7. **Cloud, App & MLOps** — AWS/EC2, Docker, CD pipeline, Postgres migration, pgvector, full frontend, full CLI, observability
 
-## Future ideas (no stage assigned)
-- **Account similarity metric** — aggregate a distance/similarity score across two Paprika accounts (ingredient overlap, cuisine distribution, semantic similarity of recipe content); natural input to Stage 6 recommender for cross-account suggestions (e.g. "recipes your wife has that you'd probably enjoy")
+## Deferred items and ideas
 
-## Deferred tests
-- `get_token` bad response format — test the `raise ValueError(f"Unexpected login response: {body}")` branch
-- `fetch_recipe` non-404 HTTP error — test that `response.raise_for_status()` propagates on e.g. 500
-- Live integration test: hash verification against Test Recipe account; `tests/integration/`, `@pytest.mark.integration`, `-m "not integration"` in CI
-
-## Deferred improvements
-- **0-recipe account messaging** — `list_recipes`, `get_recipe`, and `search_recipes` return generic "not found" responses for empty accounts, indistinguishable from a real miss. Low priority; revisit if it causes user confusion.
-
-## Tooling roadmap
-- **mypy or Pyright** — trigger met (2026-06-25: `paprika_client.py` added; cross-module calls); revisit adding static type-checking
-- **sentence-transformers + FAISS** — trigger: Stage 5 begins
-- **SQLAlchemy or raw sqlite3** — trigger: Stage 3 begins (discuss ORM vs. raw SQL then)
-- **git-cliff CI automation** — trigger: Stage 5-6; add tag-triggered changelog regeneration to `ci.yml`
+Deferred items live in [docs/registers/deferred.md](docs/registers/deferred.md);
+unvetted ideas in [docs/_auxiliary/ideas_20260922.md](docs/_auxiliary/ideas_20260922.md)
+(consolidated 2026-09-22, pass 20260922). Replaces the former Future ideas, Deferred
+tests, Deferred improvements, and Tooling roadmap sections.

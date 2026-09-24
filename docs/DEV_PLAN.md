@@ -97,10 +97,8 @@ discipline, CI/CD — strong engineering foundation.
 ### Stage 2 next
 
 ### Deferred (flagged for later stages)
-- Local SQLite persistent cache — Stage 3
-- Two-way sync with deletion protection flag — Stage 3-4
-- Semantic search / embeddings — Stage 5
-- Nutrition calculation tool — Stage 5-6
+
+Deferred items live in [docs/registers/deferred.md](registers/deferred.md) (consolidated 2026-09-22, pass 20260922).
 
 ---
 
@@ -194,8 +192,8 @@ programmatically without Claude Desktop. One focused session.
 - [ ] Config: server address from env or CLI flag
 
 ### Deliberately deferred from original Stage 4
-- Full CLI with `typer`/`argparse` — revisit at Stage 6
-- `pydantic-settings` config management — revisit at Stage 6
+
+Deferred items live in [docs/registers/deferred.md](registers/deferred.md) (consolidated 2026-09-22, pass 20260922).
 
 ---
 
