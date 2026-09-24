@@ -27,6 +27,14 @@ docs/session/*
 docs/spec/*
 !docs/spec/README.md
 
+# Inbox carryovers - ignore contents, keep the contract keeper
+docs/_inbox/*
+!docs/_inbox/README.md
+
+# Archive - ignore contents, keep the contract keeper
+docs/_archive/*
+!docs/_archive/README.md
+
 # Assets
 assets/archive/
 assets/**/*.mov
