@@ -162,8 +162,9 @@ modification is their purpose.
 | `~/.claude/memory/MEMORY.md`, `projects/<p>/memory/*` | Authored | Claude Code (auto) | memory system (not hand-edited) | automatic |
 | `~/.claude/CLAUDE.md` (global) | Authored | Art | Art | as needed |
 
-> **Executor rule.** Every artifact has exactly one author, assigned by principle. The
-> git boundary is a *proxy* for this: in-repo ⇒ Claude Code applies + apostrophe-greps
+> **Executor rule.** Every artifact has exactly one author, assigned by principle. For
+> `docs/_inbox/` carryovers the unit is the entry, and the entry form names its author.
+> The git boundary is a *proxy* for this: in-repo ⇒ Claude Code applies + apostrophe-greps
 > + commits, keeping apply/verify/commit atomic where git lives. Where there is no
 > commit (out-of-repo memory; gitignored transients in `docs/session/`, `docs/spec/`,
 > `docs/_inbox/`, `docs/_archive/`), the proxy does not bind and the author is named

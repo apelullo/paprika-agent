@@ -22,6 +22,9 @@
 - **Dates** are read from the machine (`date '+%Y-%m-%d %H:%M %Z (%A)'`) at open, at
   every resumption, and at close. A scratchpad entry is stamped with the day it is
   written; the pass identifier never changes.
+- **A process change cannot govern its own pass.** The pass that installs a change runs
+  under the previous version; its spec carries any override items explicitly. The new
+  version governs from the next pass.
 
 ## 2. Session-start actions
 
@@ -34,7 +37,7 @@ session-start actions."* CLAUDE.md points here.
 | 2 | `ls` `docs/session/`, `docs/spec/`, `docs/_inbox/`, `docs/_archive/`; decide in-flight vs new pass and the identifier per section 1 | every transient filename depends on it |
 | 3 | Sweep `docs/_inbox/`: read each `carryover_*.md`; its items enter this pass's scratchpad; the file archives with this pass | post-session thoughts otherwise never re-enter |
 | 4 | Create `docs/session/chat_scratchpad_<pass>.md` (the first append creates it) | capture needs a file before work starts |
-| 5 | Read, in order: `project_development_plan.md`; `docs/registers/deferred.md` (rows targeting the current stage and piece) and `open_questions.md`; the current `docs/stages/STAGE_0N.md`; every `docs/_auxiliary/` file with `Status: in-progress` that names this pass; `docs/session/code_scratchpad_<pass>.md` if present | these are the sources; there is no view |
+| 5 | Read, in order: `project_development_plan.md`; `docs/registers/deferred.md` (rows targeting the current stage and piece) and `open_questions.md`; `DECISIONS.md` lines that name the current stage or piece (grep); the current `docs/stages/STAGE_0N.md`; every `docs/_auxiliary/` file with `Status: in-progress` that names this pass; `docs/session/code_scratchpad_<pass>.md` if present | these are the sources; there is no view |
 | 6 | State the pass scope in one line before design work begins | anything outside it is DEFERRED or IDEA, never silently in |
 
 Claude Code reads CLAUDE.md automatically, then runs steps 1, 2, and 4 (its own
@@ -79,6 +82,7 @@ runs early, is skipped, or is reordered without his consent given in chat first.
 
 | # | Actor | Step | Why |
 |---|---|---|---|
+| 0 | Both | Re-read this section before starting the close | the close runs from the file, not from recall |
 | 1 | Chat | Reconcile its own scratchpad against Code's (delete redundant, add for gaps, annotate overlaps); write the reconciliation timestamp into the spec header | a stale reconciliation silently drops entries |
 | 2 | Chat | Review `docs/registers/deferred.md` and in-progress `docs/_auxiliary/` files for items due at the next piece; pull them into the spec or name them as the next pass's input | deferred items were forgotten when only a view listed them |
 | 3 | Chat | Author `docs/spec/spec_<subject>_<pass>.md`: numbered concrete items, a commit plan, and a destination for every scratchpad entry | prose instructions get dropped; spec items must be spec items |
@@ -119,6 +123,8 @@ create the file it routes to.
 - [ ] CLAUDE.md ownership matrix rows for `DECISIONS.md`, `docs/registers/*`,
       `docs/_auxiliary/*`, `docs/_inbox/*`, `docs/_archive/*`, both scratchpads, specs
 - [ ] CLAUDE.md file-class table matches sections 3 to 6
+- [ ] CLAUDE.md Scratchpad protocol present and matching section 3
+- [ ] CLAUDE.md `docs/` carve-out exempts every transient folder (`session`, `spec`, `_inbox`)
 - [ ] `.gitignore`: `docs/session/*`, `docs/spec/*`, `docs/_inbox/*`, `docs/_archive/*`,
       each with its README exception
 - [ ] Project instructions (UI, Art applies): session-start pointer to CLAUDE.md

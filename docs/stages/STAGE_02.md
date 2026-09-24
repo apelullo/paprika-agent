@@ -144,10 +144,11 @@ required; an empty suffix, an empty token, or a duplicate token is a `ValueError
 at construction, in a structural commit before the auth commit.
 
 **Security note:** tokens are compared as bytes with `hmac.compare_digest`, never
-`==`. Each comparison is constant-time in the token contents; looping the configured
-keys still varies with their number and stops at the first match. On a home LAN with
-a handful of devices that leak is immaterial and is accepted, not hidden behind an
-unqualified "constant-time".
+`==`, from the first implementation rather than as later hardening. Each comparison is
+constant-time in the token contents; looping the configured keys still varies with
+their number and stops at the first match. On a home LAN with a handful of devices
+that leak is immaterial and is accepted, not hidden behind an unqualified
+"constant-time".
 
 **Revocation:** remove the key from `.env`, restart the server. A direct conceptual
 precursor to OAuth token revocation in Stage 7.
@@ -157,9 +158,10 @@ precursor to OAuth token revocation in Stage 7.
 outright. An explicit opt-in for bind-all is deferred to Stage 7.
 
 **3b. Health.** `@mcp.custom_route("/health", methods=["GET"])` returning
-`{"status": "ok"}`. Custom routes are added outside `RequireAuthMiddleware` by
-construction, so the bypass is free, and a comment cannot fail: a guard test locks it
-(same app instance: `/mcp` without a token → 401, `/health` → 200).
+`{"status": "ok"}`, reachable by monitoring tools and manual debugging without
+credentials. Custom routes are added outside `RequireAuthMiddleware` by construction,
+so the bypass is free, and a comment cannot fail: a guard test locks it (same app
+instance: `/mcp` without a token → 401, `/health` → 200).
 
 **Why it matters:** `curl http://192.168.x.x:8000/health` isolates the failure layer:
 response → server up, problem in auth/MCP; no response → server down or network

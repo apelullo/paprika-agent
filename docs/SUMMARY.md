@@ -863,7 +863,8 @@ created the rooms; logical extraction made state ownership exclusive and enforce
 
 ### 2026-09-22 to 2026-09-24 — Pass 20260922: Doc Process v4 and Piece 3 Design
 
-**Commits:** 12 commits (C1-C10 plus two close-amendment commits)
+**Commits:** C1-C10 plus close-amendment rounds; the full list is in the archived close
+report (`docs/_archive/retired_20260922/code_report_20260922.md`)
 
 #### What was built
 Doc process v4, installed as Pass A. Stages renumbered 1-7 with one version tag per
@@ -936,6 +937,12 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
 - (2026-09-24) Carryover gains the chat as a post-close writer; every entry carries
   author and date (Art)
 - (2026-09-24) The staleness process is designed in a short process pass after Pass B
+- (2026-09-24) Transfer-audit adjudication: five rules restored to SOP and CLAUDE.md,
+  six drops accepted, two narrowed STAGE_02 clauses restored
+- (2026-09-24) Commit-count lines are count-free and point at the archived close report
+  (Code)
+- (2026-09-24) Round 4 approved in advance; Code proceeds to S13/S14 after Art's diff
+  review
 
 #### Concepts learned
 - **Toolset namespace collision** (2026-07-24) — two toolsets with overlapping
@@ -986,6 +993,10 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
 - **Effort levels, not "extended thinking"** (2026-09-24) — in the Claude app, Effort
   (Low/Medium/High/Extra/Max) is the thinking-budget lever; "extended thinking" is an
   API-side frame. Correction from Art.
+- **The transfer audit paid for itself** (2026-09-24) — 9 of 71 rules were dropped;
+  3 of those plus 2 checklist items plus 1 tension were worth restoring, and none were
+  visible from the outside. A structural pass ends with this table, not with a feeling
+  that it went well.
 
 #### Process / tooling
 - **Upstream issue resolved** (2026-07-24) — the comment on

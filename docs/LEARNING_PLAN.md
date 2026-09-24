@@ -285,6 +285,8 @@ service configuration before cloud introduces additional abstraction.
   correctness misses dropped items; two Piece 5 test cases fell out that way.
 - [x] **Effort levels** — in the Claude app, Effort (Low to Max) is the thinking-budget
   lever; "extended thinking" is an API-side frame.
+- [x] **The transfer audit paid for itself** — a structural pass ends with a rule-by-rule
+  transfer table; the restorable drops were invisible from the outside.
 
 ---
 
