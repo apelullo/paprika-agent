@@ -3,8 +3,12 @@
 
 > **Living document** — no date suffix; git supplies the history. Migrated in-repo
 > 2026-07-23 from the desktop planning file (now archive, not source).
+> Amended 2026-09-22/23 (pass 20260922): stage numbers 1-7; Pieces 4-5 folded into 3;
+> Piece 3 extension point corrected to `TokenVerifier`; `MCP_HOST` rule recorded.
 >
-> **Status:** Pieces 0–2 complete; **Piece 3 (auth) next.**
+> **Status:** Pieces 0-2 complete; **Piece 3 (auth, health, CI gate) next**, as Pass B.
+> Pieces 4 and 5 were folded into Piece 3 on 2026-09-22; Pieces 6 and 7 keep their
+> numbers.
 >
 > **Precedence rule:** where this file and the repo disagree on *current detail*,
 > the repo wins (`config.py`, `server.py`, `docs/DEV_PLAN.md`, the Decision Log).
@@ -60,6 +64,10 @@ networks the machine may join.
 `.local` for Stage 2 — it builds the correct mental model (IP is the address; DNS is
 an abstraction on top), and Windows mDNS support is inconsistent (relevant when the
 desktop joins at Stage 5). mDNS revisitable as a convenience layer later.
+**`MCP_HOST` validation (decided 2026-09-23, ships in Piece 3):** IP literals only
+via `ipaddress.ip_address`; hostnames including `localhost` raise at startup;
+`0.0.0.0` and `::` are rejected outright. An explicit opt-in for bind-all is
+deferred to Stage 7.
 
 ### Server machine: MacBook Air + launchd
 **Decision:** MacBook Air as always-on server; `launchd` for process management.
@@ -80,7 +88,7 @@ Easier to split while the code is stable and tests are green.
 | File | Responsibility |
 |---|---|
 | `paprika_client.py` | Paprika API calls, `_recipe_cache`, `_name_index`, `_cache_populated`, `_populate_cache`, `_normalize`, `_validate_input_string`, semaphore, timeout constant |
-| `server.py` | FastMCP app instance, MCP tool definitions (delegate to `paprika_client`), transport startup, auth middleware, health endpoint |
+| `server.py` | FastMCP app instance, MCP tool definitions (delegate to `paprika_client`), transport startup, auth (a `TokenVerifier` wired at construction), health endpoint |
 
 Two commits: `24c9d45` (structural split) + `090c099` (Option B — sync orchestration
 extracted into `paprika_client.sync()` returning a `SyncResult`; `sync_recipes`
@@ -116,49 +124,59 @@ prefix `FASTMCP_`). Contract value renamed `streamable-http` → `http`. Suite 4
 **What this taught:** how FastMCP exposes transport config; what binding to a
 host:port means at the socket level.
 
-### Piece 3 — Auth middleware: bearer token + per-device keys  ◄ NEXT
-A request interceptor that runs before any tool call or endpoint handler (except
-health — see Piece 4).
+### Piece 3 — Auth, health, CI gate  ◄ NEXT (Pass B)
+Per-device bearer-token auth, the unauthenticated health endpoint, and the CI gate,
+folded together 2026-09-22: the health bypass is a framework property that needs a
+guard test, and a `tests/integration/` suite runs unfiltered in CI until markers
+exist. Design proposal and commit plan: `docs/_auxiliary/piece3_design_20260922.md`.
 
-**Behavior:**
-- Checks `Authorization: Bearer <key>` on every incoming request.
-- Validates against the list of active per-device keys from `.env`.
-- Returns `401` if the header is missing or the key is unrecognized.
+**3a. Auth.** FastMCP's extension point is a `TokenVerifier` subclass in a new
+`auth.py` (`verify_token(token) -> AccessToken | None`), not middleware: FastMCP's
+`Middleware` class operates on MCP messages and never sees HTTP headers, while the
+framework's own `RequireAuthMiddleware` wraps the MCP route, calls the verifier, and
+returns `401` with `WWW-Authenticate` when the header is missing or the verifier
+returns `None`. Keys load from `MCP_API_KEY_<DEVICE>` into
+`ServerConfig.api_keys: tuple[DeviceKey, ...]` (http branch only; at least one
+required; an empty suffix, an empty token, or a duplicate token is a `ValueError`;
+`DeviceKey.token` is excluded from `repr`). The device name is returned as
+`AccessToken.client_id`. A `create_server(config)` factory builds the app with `auth=`
+at construction, in a structural commit before the auth commit.
 
-**Security note:** compare the supplied token against each valid key with
-`hmac.compare_digest`, never `==`. Constant-time comparison avoids leaking key length
-or contents through timing. Apply from the first implementation.
+**Security note:** tokens are compared as bytes with `hmac.compare_digest`, never
+`==`. Each comparison is constant-time in the token contents; looping the configured
+keys still varies with their number and stops at the first match. On a home LAN with
+a handful of devices that leak is immaterial and is accepted, not hidden behind an
+unqualified "constant-time".
 
-**Revocation:** remove the key from `.env`, restart the server. Simple, explicit, a
-direct conceptual precursor to OAuth token revocation in Stage 7.
+**Revocation:** remove the key from `.env`, restart the server. A direct conceptual
+precursor to OAuth token revocation in Stage 7.
 
-**Also carries:** `MCP_HOST` format validation (`ipaddress` stdlib — currently
-unvalidated, fails late at uvicorn bind); the first `tests/integration/` suite.
+**`MCP_HOST` validation** (own commit): `ipaddress.ip_address`, IP literals only;
+`localhost` and other hostnames raise at startup; `0.0.0.0` and `::` are rejected
+outright. An explicit opt-in for bind-all is deferred to Stage 7.
 
-**What this teaches:** authentication (who are you?) vs. authorization (what are you
-allowed to do?) — auth middleware handles the former; the latter arrives in Stage 7
-with OAuth 2.1.
+**3b. Health.** `@mcp.custom_route("/health", methods=["GET"])` returning
+`{"status": "ok"}`. Custom routes are added outside `RequireAuthMiddleware` by
+construction, so the bypass is free, and a comment cannot fail: a guard test locks it
+(same app instance: `/mcp` without a token → 401, `/health` → 200).
 
-### Piece 4 — Health endpoint: unauthenticated `GET /health`
-```json
-{"status": "ok"}
-```
-**Critical design decision:** this endpoint explicitly bypasses auth middleware.
-Health checks must be reachable by monitoring tools and manual debugging without
-credentials. Document the bypass as intentional in code comments.
-
-**Why it matters:** `curl http://192.168.x.x:8000/health` isolates the failure layer —
+**Why it matters:** `curl http://192.168.x.x:8000/health` isolates the failure layer:
 response → server up, problem in auth/MCP; no response → server down or network
-broken; `401` → auth running but health bypass misconfigured.
+broken; `401` → the guard test is wrong or the route moved.
 
-### Piece 5 — Tests + CI updates
-**New tests:** auth middleware (valid key passes; missing header → 401; wrong key →
-401; per-device key independently valid; revoked key → 401); health endpoint
-(reachable without auth; expected shape); transport resolution (stdio default when
-`MCP_TRANSPORT` absent; http mode when set).
-**Existing tests:** all pass unchanged (transport transparency).
-**CI:** network/integration tests marked and excluded: `pytest -m "not integration
-and not network"`.
+**3c. Tests + CI.** Unit: config key parsing (branch scoping, the three `ValueError`
+cases, zero keys); `verify_token` (valid → device name; unknown or empty → `None`).
+HTTP (`tests/integration/`, marker `integration`, runs in CI): missing header → 401;
+wrong token → 401; each device's token independently valid; the health guard. Driven
+through Starlette's `TestClient` against `mcp.http_app(json_response=True)` (lifespan
+runs on `__enter__`); the in-process `fastmcp.Client` bypasses HTTP and cannot test
+auth. Markers `integration` and `live` registered in `pyproject.toml`; CI runs
+`-m "not live"`. Existing 51 tests pass unchanged (transport transparency).
+
+**What this teaches:** the composition root (dependency injection at construction vs
+mutation after); authentication (who are you?) vs authorization (what may you do?),
+the latter arriving with OAuth 2.1 in Stage 7; test tiers by I/O boundary and the
+difference between a comment and a guard.
 
 **This is the gate before touching the MacBook Air. Do not proceed to Piece 6 until
 CI is green.**
@@ -214,11 +232,9 @@ Piece 1  Config (.env schema, value-authoritative resolver, .gitignore) ✅
    │
 Piece 2  Transport (Streamable HTTP startup in server.py)              ✅
    │
-Piece 3  Auth middleware (bearer token + per-device keys)             ◄ NEXT
-   │
-Piece 4  Health endpoint (unauthenticated GET /health)
-   │
-Piece 5  Tests + CI  ◄── gate: all green before leaving the repo
+Piece 3  Auth + health + tests/CI  (3a auth · 3b /health · 3c gate)  ◄ NEXT (Pass B)
+   │     ◄── gate: all green before leaving the repo
+   │     Pieces 4 and 5 folded in 2026-09-22; 6 and 7 keep their numbers
    │
 Piece 6  MacBook Air setup
          6a. Static IP (router)
@@ -237,7 +253,8 @@ Piece 7  Claude Desktop config (remote entry + keep stdio entry)
 1. **Transport transparency:** tool logic has no knowledge of how requests arrive or
    responses leave. Swapping transports requires zero changes to tool code.
 2. **Separation of concerns:** each piece has one job. Transport doesn't know about
-   auth; auth doesn't know about tools; the health bypass is explicit, not accidental.
+   auth; auth doesn't know about tools; the health bypass is a framework property
+   locked by a guard test, not a comment.
 3. **Infrastructure vs. application config:** static IP lives in the router, not the
    repo. `.env` holds runtime config. Code holds no secrets and no environment
    assumptions.
