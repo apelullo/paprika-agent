@@ -4,9 +4,10 @@ import inspect
 import httpx
 import pytest
 from fastmcp import FastMCP
+from fastmcp.server.auth import TokenVerifier
 
 import paprika_client
-from config import ServerConfig
+from config import DeviceKey, ServerConfig
 from paprika_client import (
     PAPRIKA_API,
     SyncResult,
@@ -542,3 +543,18 @@ def test_create_server_registers_the_four_tools():
     assert isinstance(mcp, FastMCP)
     names = sorted(t.name for t in asyncio.run(mcp.list_tools()))
     assert names == ["get_recipe", "list_recipes", "search_recipes", "sync_recipes"]
+
+
+def test_create_server_http_attaches_token_verifier():
+    # Guards the auth= wiring: RequireAuthMiddleware calls this verifier.
+    config = ServerConfig(
+        transport="http",
+        host="127.0.0.1",
+        port=8000,
+        api_keys=(DeviceKey(device="LAPTOP", token="test-token-laptop"),),
+    )
+    assert isinstance(create_server(config).auth, TokenVerifier)
+
+
+def test_create_server_stdio_has_no_auth():
+    assert create_server(ServerConfig(transport="stdio")).auth is None

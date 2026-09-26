@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 import paprika_client
+from auth import DeviceTokenVerifier
 from config import ServerConfig
 
 load_dotenv()
@@ -81,7 +82,8 @@ async def sync_recipes(mode: str = "incremental") -> str:
 def create_server(config: ServerConfig) -> FastMCP:
     """Composition root: build the FastMCP server with every dependency
     attached at construction."""
-    mcp = FastMCP("Paprika")
+    auth = DeviceTokenVerifier(config.api_keys) if config.transport == "http" else None
+    mcp = FastMCP("Paprika", auth=auth)
     for tool in (list_recipes, get_recipe, search_recipes, sync_recipes):
         mcp.tool(tool)
     return mcp
