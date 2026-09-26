@@ -15,6 +15,7 @@ from paprika_client import (
 )
 from server import (
     _run_kwargs,
+    create_server,
     get_recipe,
     list_recipes,
     search_recipes,
@@ -530,3 +531,14 @@ def test_stdio_signature_has_no_host_param():
     params = inspect.signature(FastMCP.run_stdio_async).parameters
     assert "host" not in params
     assert "port" not in params
+
+
+# --- Server factory (Piece 3) — none of these start a server ---
+
+
+def test_create_server_registers_the_four_tools():
+    # Guards the factory: the tool set is fixed at construction.
+    mcp = create_server(ServerConfig(transport="stdio"))
+    assert isinstance(mcp, FastMCP)
+    names = sorted(t.name for t in asyncio.run(mcp.list_tools()))
+    assert names == ["get_recipe", "list_recipes", "search_recipes", "sync_recipes"]

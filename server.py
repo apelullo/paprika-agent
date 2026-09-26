@@ -9,17 +9,13 @@ from config import ServerConfig
 
 load_dotenv()
 
-mcp = FastMCP("Paprika")
 
-
-@mcp.tool()
 async def list_recipes() -> list[str]:
     """Return a list of all recipe titles from Paprika."""
     await paprika_client._populate_cache()
     return [r["name"] for r in paprika_client._recipe_cache.values()]
 
 
-@mcp.tool()
 async def get_recipe(name: str) -> dict | str:
     """Return full details for a recipe by name (case-insensitive, exact match).
     Returns a not-found message if no recipe with that name exists."""
@@ -31,7 +27,6 @@ async def get_recipe(name: str) -> dict | str:
     return paprika_client._recipe_cache[uid]
 
 
-@mcp.tool()
 async def search_recipes(query: str) -> list[str] | str:
     """Search recipes by keyword. Returns all recipe names where every query
     token appears in the name (case-insensitive, order-independent)."""
@@ -55,7 +50,6 @@ async def search_recipes(query: str) -> list[str] | str:
     )
 
 
-@mcp.tool()
 async def sync_recipes(mode: str = "incremental") -> str:
     """Sync the in-memory recipe cache with the Paprika API.
 
@@ -84,6 +78,15 @@ async def sync_recipes(mode: str = "incremental") -> str:
     )
 
 
+def create_server(config: ServerConfig) -> FastMCP:
+    """Composition root: build the FastMCP server with every dependency
+    attached at construction."""
+    mcp = FastMCP("Paprika")
+    for tool in (list_recipes, get_recipe, search_recipes, sync_recipes):
+        mcp.tool(tool)
+    return mcp
+
+
 def _run_kwargs(config: ServerConfig) -> dict[str, Any]:
     """Build keyword arguments for FastMCP's run().
 
@@ -106,4 +109,4 @@ def _run_kwargs(config: ServerConfig) -> dict[str, Any]:
 
 if __name__ == "__main__":
     config = ServerConfig.from_env(os.environ)
-    mcp.run(**_run_kwargs(config))
+    create_server(config).run(**_run_kwargs(config))
