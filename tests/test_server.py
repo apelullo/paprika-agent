@@ -177,6 +177,55 @@ async def test_fetch_recipe_404(httpx_mock):
 
 
 @pytest.mark.anyio
+async def test_fetch_recipe_non_404_error_propagates(httpx_mock):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{PAPRIKA_API}/sync/recipe/some-uid/",
+        status_code=500,
+    )
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            await paprika_client.fetch_recipe(
+                client, "fake-token", "some-uid", asyncio.Semaphore(1)
+            )
+    assert excinfo.value.response.status_code == 500
+
+
+@pytest.fixture
+def fake_credentials(monkeypatch):
+    # server.py loads .env on import; fake values keep real credentials
+    # out of the mocked login request.
+    monkeypatch.setenv("PAPRIKA_EMAIL", "test@example.com")
+    monkeypatch.setenv("PAPRIKA_PASSWORD", "test-password")
+
+
+@pytest.mark.anyio
+async def test_get_token_response_without_result_raises(httpx_mock, fake_credentials):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"error": {"message": "Invalid email or password"}},
+    )
+    with pytest.raises(ValueError, match="Unexpected login response"):
+        await paprika_client.get_token()
+
+
+@pytest.mark.anyio
+async def test_get_token_result_without_token_raises_key_error(
+    httpx_mock, fake_credentials
+):
+    # Locks current behaviour: a "result" with no "token" escapes as a bare
+    # KeyError, not the ValueError above. Flagged as a candidate change.
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{PAPRIKA_API}/account/login/",
+        json={"result": {}},
+    )
+    with pytest.raises(KeyError, match="token"):
+        await paprika_client.get_token()
+
+
+@pytest.mark.anyio
 async def test_populate_cache_already_warm(httpx_mock, monkeypatch):
     existing = {"uid-1": {"uid": "uid-1", "name": "Mom's Soup"}}
     monkeypatch.setattr("paprika_client._recipe_cache", existing.copy())
