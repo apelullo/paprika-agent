@@ -30,17 +30,23 @@ uv sync
 ## Running tests
 
 ```bash
-uv run pytest tests/ -v
+uv run pytest tests/ -v                 # everything, including live tests
+uv run pytest tests/ -v -m "not live"   # what CI runs
 ```
 
-Tests live in `tests/test_server.py` (tools) and `tests/test_config.py`
-(`ServerConfig.from_env`). Unit tests cover pure functions and require no
-credentials or network access.
+Unit tests live in `tests/test_server.py` (tools, the Paprika client, the
+`create_server` factory), `tests/test_config.py` (`ServerConfig.from_env`), and
+`tests/test_auth.py` (`DeviceTokenVerifier`); they need no credentials or network
+access. `tests/integration/` holds in-process HTTP tests (marker `integration`,
+run in CI) that drive the ASGI app through Starlette's `TestClient`. Tests that
+need a socket or real credentials take the `live` marker and are excluded in CI.
+Markers are strict (`strict_markers = true` in `pyproject.toml`): register a new
+marker there before using it.
 
 ## CI
 
-GitHub Actions runs the test suite on every push and PR to `master`
-(`.github/workflows/ci.yml`). Check the Actions tab for results.
+GitHub Actions runs the test suite, excluding `live`-marked tests, on every push
+and PR to `master` (`.github/workflows/ci.yml`). Check the Actions tab for results.
 
 ## CI Notes
 
@@ -80,13 +86,14 @@ running it before all commits are in tags the wrong commit.
 
 ## Architecture
 
-The codebase is three modules:
+The codebase is four modules:
 
-- `server.py` — MCP layer only: `load_dotenv()`, `mcp = FastMCP("Paprika")`, the four `@mcp.tool()` defs, the `_run_kwargs(config)` adapter, and the `__main__` entry point (which resolves `ServerConfig.from_env(os.environ)` and calls `mcp.run(**_run_kwargs(config))`). Imports `os`, `typing`, `dotenv`, `fastmcp`, `config`, and `paprika_client` — no `httpx`/`asyncio`, so the MCP layer knows nothing about the Paprika HTTP API. **`_run_kwargs` omits host/port entirely in stdio mode** — `run()` forwards `**kwargs` to `run_stdio_async()`, which raises `TypeError` on unexpected keywords, so omission is required rather than stylistic.
-- `config.py` — env-driven server config: frozen `ServerConfig` dataclass + `ServerConfig.from_env(env)`. Transport selection is value-authoritative (`MCP_TRANSPORT` unset → stdio; set → validated; unknown → `ValueError`). Host/port resolution and validation are scoped to the `http` branch only — stdio never inspects `MCP_HOST`/`MCP_PORT`. `from_env` operates solely on the injected mapping, never `os.environ`. See `.env.example` for the full env-var contract.
+- `server.py` — MCP layer only: `load_dotenv()`, the four tools as plain module-level `async def`s, the `create_server(config)` factory, the `_run_kwargs(config)` adapter, and the `__main__` entry point (which resolves `ServerConfig.from_env(os.environ)` and calls `create_server(config).run(**_run_kwargs(config))`). **`create_server` is the composition root:** it builds `FastMCP("Paprika", auth=...)` (a `DeviceTokenVerifier` in http mode, `None` in stdio), registers the tools with `mcp.tool(fn)`, and adds `GET /health`, all at construction; nothing is mutated afterwards, and importing `server` builds no server. Imports `os`, `typing`, `dotenv`, `fastmcp`, `starlette` (request/response types for `/health`), `auth`, `config`, and `paprika_client` — no `httpx`/`asyncio`, so the MCP layer knows nothing about the Paprika HTTP API. **`_run_kwargs` omits host/port entirely in stdio mode** — `run()` forwards `**kwargs` to `run_stdio_async()`, which raises `TypeError` on unexpected keywords, so omission is required rather than stylistic. **`/health` is unauthenticated by construction** — FastMCP wraps only the MCP route in `RequireAuthMiddleware` and adds custom routes outside it; `tests/integration/test_health_http.py` guards that bypass.
+- `config.py` — env-driven server config: frozen `ServerConfig` dataclass + `ServerConfig.from_env(env)`. Transport selection is value-authoritative (`MCP_TRANSPORT` unset → stdio; set → validated; unknown → `ValueError`). Host, port, and key resolution and validation are scoped to the `http` branch only, in that order — stdio never inspects `MCP_HOST`/`MCP_PORT`/`MCP_API_KEY_*`. `MCP_HOST` must be an IP literal and not bind-all. Every `MCP_API_KEY_<DEVICE>` becomes a frozen `DeviceKey(device, token)` in `ServerConfig.api_keys` (sorted by device; `token` excluded from `repr`); zero keys, an empty suffix, an empty or non-ASCII token, or a token shared by two devices raises `ValueError`. Framework-free. `from_env` operates solely on the injected mapping, never `os.environ`. See `.env.example` for the full env-var contract.
+- `auth.py` — `DeviceTokenVerifier(TokenVerifier)`, the adapter between `DeviceKey`s and FastMCP's auth layer: its async `verify_token` compares the presented token with each configured token as UTF-8 bytes via `hmac.compare_digest` and returns `AccessToken(client_id=<device>)` on a match, else `None`. FastMCP's `RequireAuthMiddleware` issues the 401; this module only decides.
 - `paprika_client.py` — the Paprika API client: authentication, the in-memory cache, recipe fetching, input validation, and sync orchestration (`sync()` → `SyncResult`).
 
-Authentication uses email/password credentials from `.env` (`PAPRIKA_EMAIL`, `PAPRIKA_PASSWORD`), exchanged for a bearer token on each cold start via `paprika_client.get_token()`.
+Paprika authentication uses email/password credentials from `.env` (`PAPRIKA_EMAIL`, `PAPRIKA_PASSWORD`), exchanged for a bearer token on each cold start via `paprika_client.get_token()`. Client authentication (http mode only) uses per-device bearer tokens from `MCP_API_KEY_<DEVICE>`, verified by `auth.py`.
 
 ### Caching strategy
 
@@ -100,7 +107,7 @@ Read tools call `await paprika_client._populate_cache()` first and read from the
 
 ### Adding a new tool
 
-Decorate an `async def` with `@mcp.tool()` in `server.py`. Tools that need recipe data should call `await paprika_client._populate_cache()` and read from `paprika_client._recipe_cache` / `paprika_client._name_index`. Tools that accept string parameters should call `paprika_client._validate_input_string(value, param, tool)` immediately — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`). Reference moved names via the `paprika_client.` prefix (module import), never `from paprika_client import …` for cache state or patched helpers — tests monkeypatch them on the module.
+Write a plain module-level `async def` in `server.py` (no decorator) and add it to the tuple `create_server` registers with `mcp.tool(fn)`; update the tool-name guard test in `tests/test_server.py`. Tests call the function directly. Tools that need recipe data should call `await paprika_client._populate_cache()` and read from `paprika_client._recipe_cache` / `paprika_client._name_index`. Tools that accept string parameters should call `paprika_client._validate_input_string(value, param, tool)` immediately — raises `ValueError` for empty/whitespace-only or oversized inputs (`MAX_QUERY_LENGTH = 200`). Reference moved names via the `paprika_client.` prefix (module import), never `from paprika_client import …` for cache state or patched helpers — tests monkeypatch them on the module.
 
 ## Planning
 
@@ -233,3 +240,9 @@ Requires a `.env` file with:
 PAPRIKA_EMAIL=...
 PAPRIKA_PASSWORD=...
 ```
+
+HTTP mode (`MCP_TRANSPORT=http`) also requires at least one
+`MCP_API_KEY_<DEVICE>=<token>` (ASCII; generate with
+`python -c "import secrets; print(secrets.token_urlsafe(32))"`), and `MCP_HOST`,
+if set, must be an IP literal other than `0.0.0.0`/`::`. Full contract:
+`.env.example`.

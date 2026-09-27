@@ -1,7 +1,9 @@
 # Paprika Agent
 
 An MCP server that connects Claude Desktop to the Paprika recipe manager
-app via its unofficial API.
+app via its unofficial API. It runs locally over stdio, or as a network
+server over Streamable HTTP with per-device bearer-token auth (Stage 2, in
+progress).
 
 ## Features
 - `list_recipes` — fetch and cache all recipes from your Paprika account
@@ -50,7 +52,8 @@ PAPRIKA_PASSWORD=yourpassword
 ```
 
 The optional `MCP_*` variables documented in `.env.example` configure network
-transport (Stage 2, in progress) — ignore them for local use.
+transport and its per-device API keys (Stage 2, in progress) — ignore them
+for local use.
 
 ### Connect Claude Desktop
 
@@ -82,16 +85,24 @@ Restart Claude Desktop. The paprika tools will be available in any new chat.
 Paprika Agent is built around a single guiding principle: **every design
 decision should extend naturally, not require replacement as the project grows.**
 
-The server is three modules with enforced boundaries:
+The server is four modules with enforced boundaries:
 
-- **`server.py`** — the MCP layer and nothing else: the four tool definitions
-  and the entry point. It imports no HTTP library and owns no state.
+- **`server.py`** — the MCP layer and nothing else: the four tool definitions,
+  the `create_server` factory that wires them together with auth and a
+  `GET /health` route at construction, and the entry point. It never calls the
+  Paprika API and owns no state.
 - **`config.py`** — environment-driven server configuration. A frozen
   `ServerConfig` is resolved via `ServerConfig.from_env`: leave `MCP_TRANSPORT`
   unset for local stdio, or set `http` for network mode (Stage 2,
   in progress). Selection is value-authoritative — unknown values fail loudly —
-  and network defaults fail closed (`127.0.0.1`, never `0.0.0.0`). Full
-  contract in `.env.example`.
+  and network settings fail closed: the host defaults to `127.0.0.1`, must be
+  an IP literal, and can never be bind-all (`0.0.0.0`, `::`); network mode
+  refuses to start without at least one per-device API key. Full contract in
+  `.env.example`.
+- **`auth.py`** — per-device bearer-token verification for network mode. Each
+  client device gets its own token; tokens are compared as bytes with
+  `hmac.compare_digest`, never `==`, and the matching device becomes the
+  authenticated client. Revoking a device is removing its key.
 - **`paprika_client.py`** — the Paprika API client: authentication, recipe
   fetching, input validation, sync, and the in-memory cache it exclusively owns.
 
