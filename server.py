@@ -3,6 +3,8 @@ from typing import Any
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 import paprika_client
 from auth import DeviceTokenVerifier
@@ -86,6 +88,15 @@ def create_server(config: ServerConfig) -> FastMCP:
     mcp = FastMCP("Paprika", auth=auth)
     for tool in (list_recipes, get_recipe, search_recipes, sync_recipes):
         mcp.tool(tool)
+
+    # Unauthenticated by construction: FastMCP wraps only the MCP route in
+    # RequireAuthMiddleware and adds custom routes outside it. That bypass
+    # is a framework property we do not own, so
+    # tests/integration/test_health_http.py guards it (B7).
+    @mcp.custom_route("/health", methods=["GET"])
+    async def health(request: Request) -> JSONResponse:
+        return JSONResponse({"status": "ok"})
+
     return mcp
 
 
