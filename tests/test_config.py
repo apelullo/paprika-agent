@@ -67,6 +67,36 @@ def test_http_default_host_is_fail_closed():
     assert config.host != "0.0.0.0"  # noqa: S104 — asserting the *absence* of bind-all
 
 
+@pytest.mark.parametrize("host", ["10.0.0.5", "fd00::1"], ids=["ipv4", "ipv6"])
+def test_http_ip_literal_host_resolves_through(host):
+    config = ServerConfig.from_env(
+        {"MCP_TRANSPORT": "http", "MCP_HOST": host, **KEY_ENV}
+    )
+    assert config.host == host
+
+
+def test_http_host_is_stored_as_given():
+    # The validator parses, but the config keeps the original spelling.
+    config = ServerConfig.from_env(
+        {"MCP_TRANSPORT": "http", "MCP_HOST": "FD00:0::1", **KEY_ENV}
+    )
+    assert config.host == "FD00:0::1"
+
+
+@pytest.mark.parametrize("host", ["localhost", ""], ids=["hostname", "empty"])
+def test_http_non_ip_host_raises(host):
+    with pytest.raises(ValueError, match="MCP_HOST .*must be an IP address literal"):
+        ServerConfig.from_env({"MCP_TRANSPORT": "http", "MCP_HOST": host, **KEY_ENV})
+
+
+@pytest.mark.parametrize(
+    "host", ["0.0.0.0", "::", "::ffff:0.0.0.0"], ids=["ipv4", "ipv6", "ipv4-mapped"]
+)
+def test_http_bind_all_host_raises(host):
+    with pytest.raises(ValueError, match="MCP_HOST .*bind-all"):
+        ServerConfig.from_env({"MCP_TRANSPORT": "http", "MCP_HOST": host, **KEY_ENV})
+
+
 def test_empty_transport_raises():
     # Present-but-empty is invalid, not "unset" — value-authoritative.
     with pytest.raises(ValueError, match="MCP_TRANSPORT"):

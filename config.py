@@ -4,6 +4,7 @@ Transport selection is value-authoritative: unset → stdio (safe local
 default), set → validated and used, unknown → ValueError.
 """
 
+import ipaddress
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
@@ -48,6 +49,20 @@ class ServerConfig:
         # http: host/port resolution and validation are scoped
         # to this branch only.
         host = env.get("MCP_HOST", DEFAULT_HOST)
+        try:
+            address = ipaddress.ip_address(host)
+        except ValueError:
+            raise ValueError(
+                f"Invalid MCP_HOST {host!r}: must be an IP address literal "
+                "(hostnames, including localhost, are not accepted)."
+            ) from None
+        if address.is_unspecified:
+            # Fail closed: one typo must not turn a LAN server into an
+            # all-interfaces server.
+            raise ValueError(
+                f"Invalid MCP_HOST {host!r}: bind-all addresses are rejected; "
+                "set this machine's LAN IP."
+            )
         port_raw = env.get("MCP_PORT")
         if port_raw is None:
             port = DEFAULT_PORT
