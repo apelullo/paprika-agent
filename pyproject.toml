@@ -8,6 +8,7 @@ dependencies = [
     "fastmcp>=3.2.4",
     "httpx>=0.28.1",
     "python-dotenv>=1.2.2",
+    "starlette>=1.0.0",
 ]
 
 [dependency-groups]
