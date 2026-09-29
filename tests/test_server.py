@@ -206,23 +206,45 @@ async def test_get_token_response_without_result_raises(httpx_mock, fake_credent
         url=f"{PAPRIKA_API}/account/login/",
         json={"error": {"message": "Invalid email or password"}},
     )
-    with pytest.raises(ValueError, match="Unexpected login response"):
+    with pytest.raises(ValueError, match="missing 'result'"):
         await paprika_client.get_token()
 
 
 @pytest.mark.anyio
-async def test_get_token_result_without_token_raises_key_error(
-    httpx_mock, fake_credentials
-):
-    # Locks current behaviour: a "result" with no "token" escapes as a bare
-    # KeyError, not the ValueError above. Flagged as a candidate change.
+async def test_get_token_result_without_token_raises(httpx_mock, fake_credentials):
     httpx_mock.add_response(
         method="POST",
         url=f"{PAPRIKA_API}/account/login/",
         json={"result": {}},
     )
-    with pytest.raises(KeyError, match="token"):
+    with pytest.raises(ValueError, match="missing 'token'"):
         await paprika_client.get_token()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "body",
+    [
+        ["SECRETVALUE"],
+        {"token": "SECRETVALUE"},
+        {"result": "SECRETVALUE"},
+        {"result": {"access_token": "SECRETVALUE"}},
+    ],
+    ids=["body-not-a-mapping", "token-at-top-level", "result-not-a-mapping", "renamed"],
+)
+async def test_get_token_error_never_echoes_the_body(
+    httpx_mock, fake_credentials, body
+):
+    # Mirrors test_config's no-echo check: a drifted shape may carry the
+    # token, so the error names the missing key and nothing else.
+    httpx_mock.add_response(
+        method="POST", url=f"{PAPRIKA_API}/account/login/", json=body
+    )
+    with pytest.raises(
+        ValueError, match="^Unexpected login response: missing '(result|token)'$"
+    ) as excinfo:
+        await paprika_client.get_token()
+    assert "SECRETVALUE" not in str(excinfo.value)
 
 
 @pytest.mark.anyio

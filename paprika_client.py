@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 import httpx
@@ -26,9 +27,14 @@ async def get_token() -> str:
         )
         response.raise_for_status()
         body = response.json()
-        if "result" not in body:
-            raise ValueError(f"Unexpected login response: {body}")
-        return body["result"]["token"]
+        # Name the missing key, never echo the body: a drifted response
+        # shape could carry the token itself.
+        if not isinstance(body, Mapping) or "result" not in body:
+            raise ValueError("Unexpected login response: missing 'result'")
+        result = body["result"]
+        if not isinstance(result, Mapping) or "token" not in result:
+            raise ValueError("Unexpected login response: missing 'token'")
+        return result["token"]
 
 
 async def fetch_recipe(
