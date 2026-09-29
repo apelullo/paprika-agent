@@ -59,9 +59,9 @@ def _normalize(name: str) -> str:
 def _validate_input_string(value: str, param: str, tool: str) -> None:
     """Raise ValueError with a helpful message if a string param is unusable."""
     if not value or not value.strip():
-        raise ValueError(f"[{tool}] ‘{param}’ must be a non-empty string.")
+        raise ValueError(f"[{tool}] '{param}' must be a non-empty string.")
     if len(value.strip()) > MAX_QUERY_LENGTH:
-        raise ValueError(f"[{tool}] ‘{param}’ exceeds {MAX_QUERY_LENGTH} characters.")
+        raise ValueError(f"[{tool}] '{param}' exceeds {MAX_QUERY_LENGTH} characters.")
 
 
 async def _populate_cache() -> None:
