@@ -147,6 +147,11 @@ in the register header.
   (two project chats) after the chat's wrong correlate.
 - ER-006 hit, Recap, process: Art's Piece 3 recap accurate on every verifiable claim
   (2026-10-05).
+- ER-007 miss, Recap, architecture: Art's misunderstanding of the difference
+  between `@mcp.tool()` and `mcp.tool(fn)`; they are the same call (one path through
+  `LocalProvider.tool`); commit 1 changed when and on what it runs (import time on a
+  module global vs construction time on a configured instance). Chosen by Art for
+  the record (2026-10-05).
 - Backfill candidates (Retrospective, from `DECISIONS.md`): principled reversals of
   locked decisions; fail-safe defaults reached unprompted (the project instructions
   already cite these; the process pass sources the lines).
