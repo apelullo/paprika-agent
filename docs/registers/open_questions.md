@@ -7,7 +7,6 @@ next number: 6
 
 | # | Question | Blocks | Raised | Status |
 |---|---|---|---|---|
-| 1 | Is the chat's opening read under v4 (CLAUDE.md, SOP.md section 2, sources) smaller than the retired HANDOFF path? Measure bytes read before the first design turn at Pass B's start | revisiting the HANDOFF retirement | chat 2026-09-23 | open |
 | 2 | Project-root and `docs/` organization: what lives at a root vs a class subfolder (`project_development_plan.md` at root, `assets/`, and so on); Career Refresh `_auxiliary/phase2_items_20260909.md` is reference material | nothing yet | chat 2026-09-23 | open |
 | 3 | Should `check-in` be a scratchpad type (routes to the recurring check-ins list, a distinct sink) or stay a flavor of `FLAG`? Evidence is still one instance | nothing yet | DOC_PROCESS v3 taxonomy | open |
 | 4 | Adopt mypy or Pyright, and when? Trigger met 2026-06-25; deferred.md item 15 | Stage 3 start | project_development_plan | open |
@@ -15,4 +14,6 @@ next number: 6
 
 ## Closed
 
-(none yet)
+| # | Question | Closed | Resolution |
+|---|---|---|---|
+| 1 | Is the chat's opening read under v4 (CLAUDE.md, SOP.md section 2, sources) smaller than the retired HANDOFF path? | 2026-09-26 | Not larger like for like: v4 entry documents 25.6 KB vs v3 26.7 KB; the HANDOFF retirement stands (DECISIONS.md 2026-09-26) |
