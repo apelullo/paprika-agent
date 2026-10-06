@@ -288,6 +288,33 @@ service configuration before cloud introduces additional abstraction.
 - [x] **The transfer audit paid for itself** — a structural pass ends with a rule-by-rule
   transfer table; the restorable drops were invisible from the outside.
 
+### Piece 3 implementation (pass 20260924)
+- [x] **Composition root** — importing `server` builds nothing; `create_server(config)`
+  wires every dependency at construction, so tests can hold two configured servers.
+- [x] **Finding the extension point** — sort the layers by what each can see and pick
+  the narrowest seam whose question matches yours (`verify_token`).
+- [x] **`hmac.compare_digest` and bytes** — `==` leaks the match position; bytes make
+  the comparison total; the first-match loop's leak is accepted and stated.
+- [x] **Secrets in self-description** — `repr=False`, errors that name the variable and
+  never the value, and the guarantee's exact scope.
+- [x] **Parse with the owning type; fail closed** — `ipaddress.ip_address`, then
+  `is_unspecified`; the default is the narrowest exposure.
+- [x] **Test tiers, markers, and the in-memory client trap** — tiers by the I/O
+  boundary crossed; the in-memory client cannot test HTTP auth; strict markers.
+- [x] **Structural vs explicit bypass** — `/health` sits outside auth by construction;
+  a guard test pins both sides on one app.
+- [x] **Lock, decide, change** — characterization tests lock found behaviour; the
+  change and its lock move together after a decision.
+- [x] **Documentation surfaces and triggers** — commit-bound, close-bound, and
+  stage-sweep surfaces; one authoritative surface per fact.
+- [x] **`mcp.tool(fn)`, `verify_token`, and pytest 9** — read from the installed
+  sources: the decorator path returns `fn`; `verify_token` is async; `strict_markers =
+  true` is the enforcing form.
+- [x] **Running threads A to J** — read both sides of the seam; construction-time
+  wiring; deny is a deliberate path; threat model decides; state a guarantee's scope;
+  parse with the owning type; prove the test can fail; own it or pin it; lock, decide,
+  change; bind each surface to its trigger (`docs/_auxiliary/teaching_method_20260927.md`).
+
 ---
 
 ## Stage 3: Local Database & Schema (goals authored at stage start; see DEV_PLAN.md Stage 3 and docs/registers/deferred.md rows targeting Stage 3)

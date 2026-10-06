@@ -1019,6 +1019,111 @@ proposal seeded in `docs/_auxiliary/` (`240d300`).
   stopped rather than writing the spec from recall. Both recovered after Art checked
   the app.
 
+### 2026-09-24 to 2026-10-05 — Pass 20260924: Stage 2 Piece 3 (Auth, Health, CI Gate)
+
+**Commits:** spec commits 1-11 and the close commits; the full list is in the archived
+close report (`docs/_archive/retired_20260924/code_report_20260924.md`)
+
+#### What was built
+Stage 2 Piece 3 in eleven commits. A `create_server(config)` composition root replaced
+the import-time global (`cbecf02`). Per-device bearer tokens: every
+`MCP_API_KEY_<DEVICE>` becomes a frozen `DeviceKey` (token kept out of `repr`; zero
+keys, an empty suffix, an empty, non-ASCII, or shared token raise), checked by
+`auth.py`'s `DeviceTokenVerifier` with bytes `hmac.compare_digest` (`dd83656`).
+`MCP_HOST` must be an IP literal and never bind-all (`307707a`). `integration` and
+`live` markers, strict markers, CI on `-m "not live"`, and an in-process HTTP auth
+suite (`075e434`). An unauthenticated `GET /health` pinned by a guard test
+(`2b36625`). Deferred row 2's client tests (`3af3a38`). Docs for the new contract
+(`df0f433`). Three widenings after review: `starlette` declared (`df2a923`),
+`get_token`'s single `ValueError` without the body (`e8bd72e`), straight quotes in
+error messages (`36a9979`). README and the executive summary refreshed (`9355efe`).
+Suite 51→89, CI green on every push; mutation checks on the key tests; live socket
+runs confirmed `/health` and `/mcp`.
+
+#### Design decisions made
+> One line each, in ledger order; full lines in [DECISIONS.md](../DECISIONS.md).
+- (2026-09-25) `from_env` validates host, port, keys; every http-mode config test
+  carries a valid key so no test encodes the order (Art)
+- (2026-09-25) The marker/CI commit lands before the `/health` commit (Art)
+- (2026-09-25) `ubuntu-latest` stays; `ubuntu-24.04` is a one-line rollback (Art)
+- (2026-09-25) `api_keys` defaults to `()`; `DeviceKey(device, token)` (chat; stood)
+- (2026-09-25) `/health` returns exactly `{"status": "ok"}`; the version question goes
+  to Stage 7 with `/info` (Art)
+- (2026-09-25) Strict markers, shipped as `strict_markers = true` (Art)
+- (2026-09-25) Deferred rows 2 and 3 pulled into Piece 3; docs became commit 7 (Art
+  delegated)
+- (2026-09-26) The HANDOFF retirement stands; open_questions Q1 closes (Art)
+- (2026-09-26) Non-ASCII tokens rejected at config load (Art chose Code's option (a))
+- (2026-09-26 and 2026-09-27) Pass cadence: design and every beat in the chat first,
+  Art runs the whole spec in Claude Code, the chat reviews at the end, a piece recap
+  before the close; in anomalies, ask Art (Art)
+- (2026-09-28) `starlette` declared as a direct dependency (Art)
+- (2026-09-28) `get_token` raises one `ValueError` naming the missing key, never the
+  body (Art)
+- (2026-09-28) Curly quotes in error messages straightened (Art)
+- (2026-09-30) Deferred row 3 retargeted to the first piece with a Paprika write path
+  (Art)
+
+#### Concepts learned
+- **Composition root** — importing `server` builds nothing; `create_server(config)`
+  wires everything at construction. Mutating `mcp.auth` afterwards would work only
+  because FastMCP reads it lazily, and would still be wrong: the revocation test needs
+  two configured instances side by side.
+- **Finding the extension point** — sort the candidate layers by what each can see,
+  pick the narrowest seam whose question matches yours (`verify_token`: "is this token
+  valid, and who is it?"), and read the framework on both sides of the hook.
+- **`compare_digest` and bytes** — `==` stops at the first differing byte and leaks
+  the match position; `compare_digest` raises on non-ASCII `str`, so both sides are
+  bytes; the first-match loop's leak is accepted and stated; the duplicate check at
+  config load uses `==` because the threat model decides, not the operation.
+- **Secrets in self-description** — `repr=False` keeps the token out of `repr`;
+  errors name the variable and never the value; the guarantee's scope is stated
+  (`asdict`, debuggers, and locals still see it); data minimization.
+- **Parse with the owning type; fail closed** — `ipaddress.ip_address` decides "is it
+  an address", `is_unspecified` decides "is it permitted"; the default is the narrowest
+  exposure.
+- **Test tiers, markers, and the in-memory client trap** — tiers by the I/O boundary
+  crossed; FastMCP's in-memory client bypasses HTTP and cannot test auth; markers are
+  metadata, `-m` is policy, strict markers make a typo an error.
+- **Structural vs explicit bypass** — `/health` sits outside the auth-wrapped subtree
+  by construction; a guard test pins both sides on one app object.
+- **Lock, decide, change** — commit 6 locked `get_token`'s bare `KeyError` as found;
+  commit 9 changed the behaviour and its lock together after Art's decision.
+- **Documentation surfaces and triggers** — contract and orientation are commit-bound,
+  narrative and status close-bound, full consistency a stage sweep; one authoritative
+  surface per fact.
+- **Running threads A to J** — read both sides of the seam; construction-time wiring;
+  deny is a deliberate path; threat model decides; state a guarantee's scope; parse
+  with the owning type; prove the test can fail; own it or pin it; lock, decide,
+  change; bind each surface to its trigger
+  (`docs/_auxiliary/teaching_method_20260927.md`).
+- **`mcp.tool(fn)` is the decorator's path** (Code) — in FastMCP's default function
+  mode it returns `fn` and stamps `fn.__fastmcp__`, so repeated `create_server` calls
+  are idempotent and the tools stay plain functions.
+- **`verify_token` is async; `AccessToken`'s shape** (Code) — read from installed
+  FastMCP 3.2.4: the SDK model plus `claims`; its repr prints the token.
+- **pytest 9 `strict_markers`** (Code) — `--strict-markers` became an override for a
+  new ini option; placed in `addopts` it did not enforce in a probe;
+  `strict_markers = true` does.
+- **Re-read before resuming** (Code) — a resumed session reads the spec's newest
+  section and the other actor's newest entries first; this pass, they restored
+  per-commit approval for commits 8 to 10.
+
+#### Process / tooling
+- **Connector contention** (2026-09-25 to 2026-09-27) — two project chats using the
+  secure-shell connector at once time one of them out; Art found the root cause. One
+  project chat at a time on the local connectors until a long-term fix.
+- **Model switches by usage cap** (2026-09-27, 2026-09-28) — the chat moved from
+  Fable 5.1 to Opus 5.5 (Extra) when Fable usage ran out, and back for the end of the
+  pass.
+- **Claude Code 2.1.285 mid-pass** (2026-09-29) — `claude --resume <session-id>` from
+  the repo directory kept one Claude Code session per pass across the update.
+- **"Test recipe account"** (2026-09-30) — Art's own Paprika account (a proper subset
+  of his wife's recipes, without the temporal data), which also holds a recipe named
+  "test recipe" from Stage 1.
+- **`ubuntu-latest` kept** (2026-09-25) — see DECISIONS.md; the CI hook reports the
+  first run after 2026-10-19.
+
 ---
 
 ## Decision Log
@@ -1041,8 +1146,8 @@ Moved to [DECISIONS.md](../DECISIONS.md) on 2026-09-22 (pass 20260922).
 - [x] **Stage 2 Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection** (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
 - [x] **Stage 2 Piece 2 — transport wiring**; `_run_kwargs` adapter; suite 46→51; CI green (`3e21a04`, `bd5462e`)
 - [x] **Step 2 — docs/ staging-site reorganization**; v3 process, author-scoped scratchpads, in-repo living stage plans, one-author memory model (`b514720`, `f460e3d`, `16f6813`)
-- [ ] Stage 2 Piece 3 — auth, health, CI gate (Pieces 4 and 5 folded in 2026-09-22);
-  earmarked as a hands-on piece.
+- [x] **Stage 2 Piece 3 — auth, health, CI gate** (Pieces 4 and 5 folded in); suite
+  51→89; pass 20260924 (`cbecf02` … `9355efe`)
 
 ### Stage completion release workflow (manual until Stage 5-6)
 Run this at the end of every stage, before moving to the next:

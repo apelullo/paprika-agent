@@ -5,9 +5,10 @@
 > 2026-07-23 from the desktop planning file (now archive, not source).
 > Amended 2026-09-22 to 2026-09-24 (pass 20260922): stage numbers 1-7; Pieces 4-5
 > folded into 3; Piece 3 extension point corrected to `TokenVerifier`; `MCP_HOST` rule
-> recorded. Amended 2026-09-27 (pass 20260924): 3c test-key rule settled.
+> recorded. Amended 2026-09-27 (pass 20260924): 3c test-key rule settled. Amended
+> 2026-10-05 (pass 20260924 close): Piece 3 complete; ASCII rule; row 3 retargeted.
 >
-> **Status:** Pieces 0-2 complete; **Piece 3 (auth, health, CI gate) next**, as Pass B.
+> **Status:** Pieces 0-3 complete; **Piece 6 (MacBook Air always-on service) next**.
 > Pieces 4 and 5 were folded into Piece 3 on 2026-09-22; Pieces 6 and 7 keep their
 > numbers.
 >
@@ -125,7 +126,7 @@ prefix `FASTMCP_`). Contract value renamed `streamable-http` → `http`. Suite 4
 **What this taught:** how FastMCP exposes transport config; what binding to a
 host:port means at the socket level.
 
-### Piece 3 — Auth, health, CI gate  ◄ NEXT (Pass B)
+### Piece 3 — Auth, health, CI gate ✅ (pass 20260924)
 Per-device bearer-token auth, the unauthenticated health endpoint, and the CI gate,
 folded together 2026-09-22: the health bypass is a framework property that needs a
 guard test, and a `tests/integration/` suite runs unfiltered in CI until markers
@@ -138,8 +139,9 @@ framework's own `RequireAuthMiddleware` wraps the MCP route, calls the verifier,
 returns `401` with `WWW-Authenticate` when the header is missing or the verifier
 returns `None`. Keys load from `MCP_API_KEY_<DEVICE>` into
 `ServerConfig.api_keys: tuple[DeviceKey, ...]` (http branch only; at least one
-required; an empty suffix, an empty token, or a duplicate token is a `ValueError`;
-`DeviceKey.token` is excluded from `repr`). The device name is returned as
+required; an empty suffix, an empty token, a non-ASCII token, or a duplicate token is
+a `ValueError`; `DeviceKey.token` is excluded from `repr`). The device name is
+returned as
 `AccessToken.client_id`. A `create_server(config)` factory builds the app with `auth=`
 at construction, in a structural commit before the auth commit.
 
@@ -174,7 +176,9 @@ wrong token → 401; each device's token independently valid; the health guard. 
 through Starlette's `TestClient` against `mcp.http_app(json_response=True)` (lifespan
 runs on `__enter__`); the in-process `fastmcp.Client` bypasses HTTP and cannot test
 auth. Markers `integration` and `live` registered in `pyproject.toml`; CI runs
-`-m "not live"`. Existing tool tests pass unchanged (transport transparency). Zero keys
+`-m "not live"`. The `live` marker is registered; the hash-verification test moved to
+deferred row 3 (retargeted 2026-09-30). Existing tool tests pass unchanged (transport
+transparency). Zero keys
 is now a `ValueError`, and validation runs host, port, keys, so every http-mode config
 test, existing (all five) and future, carries one valid key: each negative test is
 otherwise valid, and no test encodes the validation order. Two cases carried from
@@ -189,7 +193,7 @@ difference between a comment and a guard.
 **This is the gate before touching the MacBook Air. Do not proceed to Piece 6 until
 CI is green.**
 
-### Piece 6 — MacBook Air setup *(first time leaving the repo)*
+### Piece 6 — MacBook Air setup *(first time leaving the repo)*  ◄ NEXT
 **6a. Static IP — router admin panel.** Assign by MAC address. One-time. Do this
 first — you need the IP before configuring anything else.
 **6b. Environment check + repo setup.**
@@ -240,11 +244,11 @@ Piece 1  Config (.env schema, value-authoritative resolver, .gitignore) ✅
    │
 Piece 2  Transport (Streamable HTTP startup in server.py)              ✅
    │
-Piece 3  Auth + health + tests/CI  (3a auth · 3b /health · 3c gate)  ◄ NEXT (Pass B)
+Piece 3  Auth + health + tests/CI  (3a auth · 3b /health · 3c gate)  ✅
    │     ◄── gate: all green before leaving the repo
    │     Pieces 4 and 5 folded in 2026-09-22; 6 and 7 keep their numbers
    │
-Piece 6  MacBook Air setup
+Piece 6  MacBook Air setup  ◄ NEXT
          6a. Static IP (router)
          6b. Environment check + clone + uv sync
          6c. .env on the Air

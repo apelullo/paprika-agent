@@ -106,6 +106,7 @@ Deferred items live in [docs/registers/deferred.md](registers/deferred.md) (cons
 ## Stage 2 — Local Network Deployment
 
 **Target tag: `v0.2.0`**
+**Status:** Pieces 0-3 done (Piece 3 in pass 20260924); Pieces 6 and 7 remaining.
 **Goal:** Move the MCP server to a second machine on the local network.
 First separation of client and server into distinct physical hosts.
 Deliberately minimal — full service configuration deferred to Stage 7.
@@ -117,6 +118,7 @@ ops awareness — rare for a DS candidate.
 - [x] Refactor `server.py` → `server.py` + `paprika_client.py` (Piece 0; 33 tests, CI green)
 - [x] Piece 1 — env-driven `ServerConfig` + value-authoritative transport auto-detection (`config.py`, `test_config.py`; suite 33→46; CI green `35517e5`)
 - [x] Piece 2 — transport wiring from config; `_run_kwargs` adapter; suite 46→51; CI green (`3e21a04`, `bd5462e`)
+- [x] Piece 3 — auth, health, CI gate; suite 51→89; commits `cbecf02` … `36a9979` plus close commits (pass 20260924)
 - [ ] Bind server to LAN IP (not just localhost)
 - [ ] Configure Claude Desktop on primary machine to connect to remote server
 - [ ] Document network configuration and basic security considerations
