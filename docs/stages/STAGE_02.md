@@ -130,7 +130,8 @@ host:port means at the socket level.
 Per-device bearer-token auth, the unauthenticated health endpoint, and the CI gate,
 folded together 2026-09-22: the health bypass is a framework property that needs a
 guard test, and a `tests/integration/` suite runs unfiltered in CI until markers
-exist. Design proposal and commit plan: `docs/_auxiliary/piece3_design_20260922.md`.
+exist. Design proposal and commit plan: `piece3_design_20260922.md` (closed
+2026-10-05; last tracked at `e6a6388`; local archive `docs/_archive/auxiliary/closed_20260924/`).
 
 **3a. Auth.** FastMCP's extension point is a `TokenVerifier` subclass in a new
 `auth.py` (`verify_token(token) -> AccessToken | None`), not middleware: FastMCP's
