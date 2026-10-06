@@ -1,12 +1,12 @@
 # Project Development Plan
 
-## Current state (as of 2026-09-27)
+## Current state (as of 2026-10-05)
 
 **Tooling:** ruff (lint + format, rules E/F/I/B/UP/N) + pre-commit + pytest (strict markers: `integration` runs in CI, `live` excluded) + GitHub Actions CI (ruff check, ruff format, pytest `-m "not live"`) + git-cliff
 **MCP tools:** `list_recipes`, `get_recipe`, `search_recipes`, `sync_recipes` (thin wrapper → `paprika_client.sync()`); plus an unauthenticated `GET /health` route in HTTP mode
 **Architecture:** four modules — `server.py` (MCP tools + `create_server(config)` composition root + entry point; `__main__` runs `create_server(ServerConfig.from_env(os.environ))`), `config.py` (frozen `ServerConfig` + value-authoritative `from_env`; `MCP_HOST` IP-literal validation; per-device `DeviceKey`s), `auth.py` (`DeviceTokenVerifier`, bytes `hmac.compare_digest`), and `paprika_client.py` (Paprika API + cache + `sync()`/`SyncResult`); eager in-memory cache (`_recipe_cache`, `_name_index`, `_cache_populated`) owned solely by `paprika_client`; Paprika bearer token from `.env` credentials; per-device client bearer tokens in HTTP mode
-**Stage:** 2 — Local Network Deployment (Pieces 0–3 done; Piece 3 — auth + health + CI gate — implemented in pass 20260924, close pending; Piece 6 next)
-**Doc process:** v4 live — procedures in `docs/SOP.md`, session start in `CLAUDE.md`, decisions in `DECISIONS.md`, deferred items in `docs/registers/`
+**Stage:** 2 — Local Network Deployment (Pieces 0–3 done; Piece 3 — auth + health + CI gate — in pass 20260924; next: the process pass, then Piece 6)
+**Doc process:** v4 live — procedures in `docs/SOP.md`, session start in `CLAUDE.md`, decisions in `DECISIONS.md`, deferred items in `docs/registers/`; process-pass proposals in `docs/_auxiliary/` (`evidence_record_20260924.md`, `teaching_method_20260927.md`, `register_sweep_axes_20260923.md`)
 
 ## Completed milestones
 - README: Architecture section
@@ -31,15 +31,16 @@
 - `server.py` refactor (Stage 2 Piece 0) — split into `server.py` (MCP) + `paprika_client.py` (API, cache, `sync()`/`SyncResult`); `sync_recipes` now validate→delegate→format; `paprika_client` sole owner of `_cache_populated`; suite 30→33; commits `24c9d45` (structural split), `090c099` (sync extraction)
 - Transport wiring (Stage 2 Piece 2) — `_run_kwargs(config)` adapter in `server.py` feeds `mcp.run()`; host/port **omitted** (not `None`) in stdio because `run()` forwards `**kwargs` to `run_stdio_async()`, which has no such params; transport always passed explicitly so a stray `FASTMCP_TRANSPORT` in `.env` cannot redirect (FastMCP reads the same `.env` with prefix `FASTMCP_`). Contract value renamed `streamable-http` → `http` (exact synonyms upstream). Suite 46→51; verified live on stdio, `:8000`, `:9001`
 - `config.py` + transport auto-detection (Stage 2 Piece 1) — frozen `ServerConfig` + `ServerConfig.from_env(env)`; value-authoritative `MCP_TRANSPORT` (unset→stdio, set→validated, unknown→`ValueError`); branch-scoped host/port validation; fail-closed `127.0.0.1`; `.env.example` contract; suite 33→46; commit `35517e5`
-- Auth + health + CI gate (Stage 2 Piece 3, pass 20260924, Pass B) — `create_server(config)` factory as composition root (tools registered and `auth=` injected at construction); `auth.py` `DeviceTokenVerifier` over per-device `MCP_API_KEY_<DEVICE>` bearer tokens (bytes `hmac.compare_digest`; tokens non-empty, ASCII, unique; zero keys in HTTP mode is a `ValueError`); `MCP_HOST` must be an IP literal, bind-all rejected; unauthenticated `GET /health` locked by a guard test; `integration`/`live` markers with strict markers, CI `-m "not live"`, in-process HTTP auth suite; deferred row 2 client tests; row 3 (live hash test) landed as the marker only, flagged; suite 51→85; Commits: 1-7 plus close-amendment rounds; the full list is in the archived close report (`docs/_archive/retired_20260924/code_report_20260924.md`)
+- Auth + health + CI gate (Stage 2 Piece 3, pass 20260924, Pass B) — `create_server(config)` factory as composition root (tools registered and `auth=` injected at construction); `auth.py` `DeviceTokenVerifier` over per-device `MCP_API_KEY_<DEVICE>` bearer tokens (bytes `hmac.compare_digest`; tokens non-empty, ASCII, unique; zero keys in HTTP mode is a `ValueError`); `MCP_HOST` must be an IP literal, bind-all rejected; unauthenticated `GET /health` locked by a guard test; `integration`/`live` markers with strict markers, CI `-m "not live"`, in-process HTTP auth suite; deferred row 2 client tests; widenings: `starlette` declared, `get_token` raises one `ValueError` without echoing the body, straight quotes in error messages; README and the SUMMARY executive summary refreshed (deferred row 1); row 3 (live hash test) landed as the marker only and was retargeted to the first piece with a Paprika write path; suite 51→89; Commits: spec commits 1-11 (`cbecf02` … `36a9979`, then `9355efe`) plus the close commits; the full list is in the archived close report (`docs/_archive/retired_20260924/code_report_20260924.md`)
 - Doc process v4 (pass 20260922, Pass A) — stages renumbered 1-7 with one version tag per stage; `DECISIONS.md` ledger (moved from SUMMARY); `docs/registers/` (deferred, open questions), `docs/_auxiliary/`, `docs/_inbox/`, `docs/_archive/`; `DOC_PROCESS.md` → `SOP.md`; CLAUDE.md session-start block + file classes; Pieces 4-5 folded into Piece 3; `HANDOFF.md` retired; Commits: C1-C10 plus close-amendment rounds; the full list is in the archived close report (`docs/_archive/retired_20260922/code_report_20260922.md`); no code change (51 tests)
 
 ## Next actions (Stage 2)
 - Piece 0 — `server.py`/`paprika_client.py` split ✅ done (`24c9d45`, `090c099`)
 - Piece 1 — `config.py` + value-authoritative transport auto-detection ✅ done (`35517e5`)
 - Piece 2 — transport wiring ✅ done (`3e21a04` rename + wiring commit)
-- Piece 3 — auth + health + CI gate ✅ implemented (pass 20260924, Pass B; close pending)
-- Next: Piece 6 — MacBook Air (static IP, `.env` with per-device keys, `launchd` always-on service, LAN IP bind); Piece 7 — Claude Desktop remote config (`/mcp`, `Authorization: Bearer <device-key>`)
+- Piece 3 — auth + health + CI gate ✅ done (pass 20260924, Pass B)
+- Next: the process pass (Evidence Record, teaching method, staleness sweep; inputs: section 5.10 of the archived spec, `docs/_archive/retired_20260924/spec_stage2_piece3_20260924.md`)
+- Then: Piece 6 — MacBook Air (static IP, `.env` with per-device keys, `launchd` always-on service, LAN IP bind); Piece 7 — Claude Desktop remote config (`/mcp`, `Authorization: Bearer <device-key>`)
 
 ## Stage roadmap
 1. **MCP Tool Suite** ✅ COMPLETE — v0.1.0
