@@ -11,26 +11,36 @@
 **Project:** Paprika Agent — an MCP server connecting Claude Desktop to the
 Paprika recipe manager app via its unofficial API.
 
-**Developer:** Art Pelullo, Senior Data Scientist (7 years, Penn Medicine).
-Bringing strong Python fundamentals, algorithmic thinking, and data science
-intuition into software engineering and production-grade development for the
-first time in a structured, deliberate way.
+**Developer:** Art Pelullo, Data Science Lead with nearly seven years at Penn
+Medicine now expanding into modern AI Engineering. Bringing strong Python
+fundamentals, algorithmic thinking, and data science intuition into production
+software engineering, deliberately and in the open.
 
-**Stack:** Python 3.13 · FastMCP · httpx · uv · pytest · ruff · pre-commit ·
-GitHub Actions · Claude Desktop (MCP client)
+**Stack:** Python 3.13 · FastMCP · Starlette · httpx · uv · pytest and
+pytest-httpx · ruff · pre-commit · GitHub Actions · Claude Desktop (MCP client)
 
-**What's been built:** A fully tested, CI-gated, and publicly released MCP
-server with four working tools (`list_recipes`, `get_recipe`,
-`search_recipes`, `sync_recipes`), a demo video, conventional commit
-history, and a production-grade project skeleton. Tagged and released
-as v0.1.0.
+**What's been built:** Stage 1 (v0.1.0): a fully tested, CI-gated, publicly
+released MCP server with four tools (`list_recipes`, `get_recipe`,
+`search_recipes`, `sync_recipes`), a demo video, and a conventional commit
+history. Stage 2 so far (Pieces 0 to 3): env-driven configuration with
+fail-closed defaults, transport wiring, a composition-root server factory,
+per-device bearer-token auth at FastMCP's verifier seam, an unauthenticated
+health route pinned by a guard test, a three-tier test suite with CI enforcing
+the split (89 tests at the Piece 3 close), and a documented two-actor
+development process (SOP v4) with a decision ledger and registers.
 
-**Key strengths demonstrated so far:** Algorithmic thinking (inverted index
-proposal), DRY instincts, test-first debugging, documentation discipline,
-and fast conceptual transfer from data science to software engineering.
+**Key strengths demonstrated:** Architecture judgment (principled reversals of
+locked decisions; the composition root and narrowest-seam auth adopted on
+reasoning, not habit), scope discipline (deliberate widenings written down, a
+deferred register reviewed at every close), verification discipline
+(unverified claims caught and corrected; read over infer is a working
+principle), and process design (the v4 documentation process and the
+design-then-implement teaching cadence are his).
 
-**Active growth areas:** Software architecture intuition, scope discipline,
-implementation velocity, commit message *why* (not just *what*).
+**Active growth areas:** Testing-design intuition ("the intuition yet to know
+how this will affect testing design downstream"), hands-on implementation reps
+now that Claude Code does the typing, and the security and operations practice
+that Stages 6 and 7 bring.
 
 ---
 
